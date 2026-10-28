@@ -37,7 +37,8 @@ self.addEventListener('fetch', function (e) {
       // 학교 와이파이가 느릴 때 : 담아 둔 것이 있으면 먼저 보여 준다
       setTimeout(function () { if (!done) fromCache(req).then(finish); }, SLOW_MS);
     }));
-  } else if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
+  } else if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com' || url.hostname === 'cdnjs.cloudflare.com') {
+    // 글꼴 · 학습지 미리 보기(pdf.js) : 한 번 받으면 기기에 두고 쓴다
     e.respondWith(caches.open(FONTS).then(function (c) {
       return c.match(req).then(function (hit) {
         const net = fetch(req).then(function (res) { if (res.ok || res.type === 'opaque') c.put(req, res.clone()); return res; });

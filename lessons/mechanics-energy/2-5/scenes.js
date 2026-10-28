@@ -1,6 +1,6 @@
 /* ═══════════════ 05. 열역학 제2법칙 : 장면 ═══════════════
-   수업 흐름 : 거꾸로 돌린 영상(도입) → 비가역 현상 → 분자 4개로 경우의 수 세기 → 분자가 많아지면
-   → 엔트로피 → 제2법칙의 여러 표현 → 더 생각하기 → 예제 → 처음 질문 해결 → 거꾸로 영상 맞히기.
+   수업 흐름 : 비가역 현상 → 분자 4개로 경우의 수 세기 → 분자가 많아지면
+   → 엔트로피 → 제2법칙의 여러 표현 → 더 생각하기 → 예제 → 거꾸로 영상 맞히기.
    학습지 빈칸 : ① 비가역 ② 찬 곳 ③ 16 ④ 많고 ⑤ 크다 ⑥ 않는다 ⑦ 감소 ⑧ 8 ⑨ 작아진다 ⑩ 보존
    영상은 늘 같은 모습이 나오도록 정해진 난수로 미리 계산해 두고, 앞으로 · 거꾸로 돌린다. */
 
@@ -110,20 +110,24 @@ function inkFrames(n, aspect, seconds, seed) {
   }
   return out;
 }
-/** 열의 이동 : 원자 8×4 (왼쪽 4줄 뜨거운 물체, 오른쪽 4줄 찬 물체). 이웃끼리 에너지 알갱이를 무작위로 주고받는다.
-    어느 쪽으로 줄지 정해져 있지 않은데도 에너지는 뜨거운 쪽에서 찬 쪽으로 퍼진다 */
+/** 열의 이동 : 원자 8×4 (왼쪽 4줄 뜨거운 물체, 오른쪽 4줄 찬 물체). 이웃한 원자끼리 에너지 차이에 비례해 에너지가 옮겨 간다.
+    전체 에너지는 그대로이고, 약 8초 뒤 두 물체의 온도(원자 하나의 평균 에너지)가 똑같아진다.
+    (원자 수가 적은 그림이라 알갱이를 무작위로 주고받게 하면 평균이 계속 들쭉날쭉해서, 실제 물체처럼 고르게 흐르게 했다) */
 const HEAT_C = 8, HEAT_R = 4, HEAT_E0 = 6;
-function heatFrames(seconds, seed) {
-  const r = seeded(seed), n = HEAT_C * HEAT_R, e = new Int8Array(n), out = [];
+function heatFrames(seconds) {
+  const n = HEAT_C * HEAT_R, e = new Float32Array(n), out = [], K = 0.045, STEPS = 4;
   for (let i = 0; i < n; i++) e[i] = (i % HEAT_C) < 4 ? HEAT_E0 : 0;
   const total = Math.round(seconds * FPS);
   for (let f = 0; f <= total; f++) {
-    out.push(Int8Array.from(e));
-    for (let s = 0; s < 16; s++) {
-      const i = Math.floor(r() * n), x = i % HEAT_C, y = Math.floor(i / HEAT_C), d = Math.floor(r() * 4);
-      const nx = x + [1, -1, 0, 0][d], ny = y + [0, 0, 1, -1][d];
-      if (nx < 0 || nx >= HEAT_C || ny < 0 || ny >= HEAT_R || e[i] === 0) continue;
-      e[i]--; e[ny * HEAT_C + nx]++;
+    out.push(Float32Array.from(e));
+    for (let s = 0; s < STEPS; s++) {
+      const d = new Float32Array(n);
+      for (let i = 0; i < n; i++) {
+        const x = i % HEAT_C, y = Math.floor(i / HEAT_C);
+        if (x + 1 < HEAT_C) { const q = K * (e[i] - e[i + 1]); d[i] -= q; d[i + 1] += q; }
+        if (y + 1 < HEAT_R) { const q = K * (e[i] - e[i + HEAT_C]); d[i] -= q; d[i + HEAT_C] += q; }
+      }
+      for (let i = 0; i < n; i++) e[i] += d[i];
     }
   }
   return out;
@@ -192,9 +196,7 @@ function progressBar(c, x, y, w, p, dir) {
 
 /* ═══════════════ 장면 목록 ═══════════════ */
 const PART1 = '1 비가역 현상', PART2 = '2 엔트로피와 방향성';
-const HOME_HINT = '빈칸 ①~⑩은 누르면 답이 나오고 다시 누르면 가려집니다.';
 const SCENE_LIST = [
-  { id: 'intro', part: '도입', title: '거꾸로 돌린 영상', ws: '생각 열기', sub: '에너지는 보존되는데 왜 한쪽으로만 일어날까', make: sceneIntro },
   { id: 'irrev', part: PART1, title: '비가역 현상', ws: '학습지 1 ① [표 1] ②', sub: '열의 이동 · 기체의 확산 · 잉크의 퍼짐', make: sceneIrrev },
   { id: 'count', part: PART2, title: '경우의 수 세기', ws: '학습지 2-(1) ③', sub: '분자 4개를 왼쪽 · 오른쪽에 나누어 넣기', make: sceneCount },
   { id: 'bign', part: PART2, title: '분자가 많아지면', ws: '학습지 2-(1) ▶ ④', sub: '한쪽에 몰릴 확률 1/2^{N}', make: sceneBigN },
@@ -202,93 +204,13 @@ const SCENE_LIST = [
   { id: 'forms', part: PART2, title: '제2법칙의 여러 표현', ws: '학습지 2 [표 2] ⑥⑦', sub: '열의 이동 · 열기관 · 엔트로피', make: sceneForms },
   { id: 'mis', part: PART2, title: '더 생각하기', ws: '생각 넓히기', sub: '금지일까 확률일까 · 냉장고 속 엔트로피', make: sceneMis },
   { id: 'ex', part: '3 예제', title: '예제', ws: '학습지 3 예제 ⑧⑨⑩', sub: '분자 3개 · 10개일 때 경우의 수', make: sceneEx },
-  { id: 'close', part: '정리', title: '처음 질문 해결', ws: '생각 열기 답', sub: '영상 ㉮만 찍을 수 있는 까닭 · 시간의 화살', make: sceneClose },
   { id: 'guess', part: '정리', title: '거꾸로 영상 맞히기', ws: '확인 활동', sub: '정방향일까, 거꾸로 돌린 것일까?', make: sceneGuess },
 ];
-
-/* ═══════════════ 도입 · 마무리 : 잉크 영상 ㉮ ㉯ ═══════════════
-   ㉮ 물에 떨어뜨린 잉크가 퍼진다(실제 영상) ㉯ 같은 영상을 거꾸로 돌렸다 (잉크가 모인다).
-   두 영상 모두 에너지는 보존된다. '거꾸로 영상은 에너지 보존에 어긋난다'는 생각을 먼저 끌어낸다. */
-const INK_TWIN = inkFrames(170, 1.2, 9, 25);
-const VOTE_TEXT = { a: ['영상 ㉯는', '에너지 보존 법칙에 어긋나서 일어나지 않는다'], b: ['에너지는 보존되지만,', '다른 까닭이 있어서 일어나지 않는다'] };
-const ROAD = [
-  ['irrev', '비가역 현상', '저절로 되돌아가지 않는 변화'],
-  ['count', '경우의 수 세기', '분자 4개로 확률 따져 보기'],
-  ['bign', '분자가 많아지면', '한쪽에 몰릴 확률 1/2^{N}'],
-  ['entropy', '엔트로피', '경우의 수와 무질서한 정도'],
-  ['forms', '제2법칙의 여러 표현', '열 · 열기관 · 엔트로피'],
-  ['close', '다시 영상으로', '처음 질문에 답하기'],
-];
-function makeTwin() {
-  const a = makeClip(INK_TWIN, { loop: true }), b = makeClip(INK_TWIN, { loop: true });
-  a.play(1); b.play(-1);
-  return [a, b];
-}
-function drawTwin(c, clips, dt, reveal) {
-  c.clearRect(0, 0, 1040, 700);
-  clips.forEach(function (cl, i) {
-    cl.step(dt);
-    const bx = 40 + i * 500, by = 78, bw = 460, bh = 560;
-    txt(c, i === 0 ? '영상 ㉮' : '영상 ㉯', bx + 6, by - 34, { size: 32, weight: 700 });
-    if (reveal) pill(c, i === 0 ? '실제로 찍은 영상' : '거꾸로 돌린 영상', bx + bw, by - 34, i === 0 ? COL.good : COL.pen, { align: 'right', size: 21 });
-    c.fillStyle = COL['panel-2']; rrect(c, bx, by, bw, bh, 18); c.fill();
-    c.strokeStyle = COL.line; c.lineWidth = 2; rrect(c, bx, by, bw, bh, 18); c.stroke();
-    drawInk(c, cl.frame(), { x: bx + 60, y: by + 52, w: bw - 120, h: (bw - 120) * 1.2 });
-    const py = by + bh - 34;
-    c.fillStyle = COL.ink; c.beginPath(); c.moveTo(bx + 26, py - 12); c.lineTo(bx + 46, py); c.lineTo(bx + 26, py + 12); c.closePath(); c.fill();
-    progressBar(c, bx + 64, py, bw - 160, cl.progress(), 1);
-    txt(c, '0:0' + Math.floor(cl.progress() * 9), bx + bw - 24, py, { size: 20, mono: true, color: COL.muted, align: 'right' });
-  });
-}
-function sceneIntro(root) {
-  let stage = 0;
-  const cv = makeCanvas(1040, 700), clips = makeTwin();
-  const tabs = tabRow(['① 질문과 예상', '② 핵심 질문'], function (i) { stage = i; render(); });
-  const ctrl = h('div', { class: 'ctrl', style: 'padding:10px 22px 14px;min-height:86px' });
-  const side = h('div', { class: 'col', style: 'gap:20px;flex:1;min-height:0' });
-  root.append(h('div', { class: 'col', style: 'height:100%;gap:14px' },
-    h('div', { class: 'tabs', style: 'grid-template-columns:repeat(2,1fr)', role: 'tablist' }, tabs),
-    h('div', { class: 'row', style: 'gap:22px;flex:1;min-height:0' },
-      h('section', { class: 'panel col fix', style: 'padding:0;gap:0' }, cv.c, ctrl),
-      h('section', { class: 'panel col fill pad', style: 'gap:0;min-height:0' }, side))));
-  const choice = function (k, n) { return h('div', { class: 'vote' }, h('span', { class: 'vn', text: n }), h('p', { class: 'vt' }, VOTE_TEXT[k][0], h('b', { text: VOTE_TEXT[k][1] }))); };
-  function render() {
-    selectTab(tabs, stage);
-    side.replaceChildren(); ctrl.replaceChildren();
-    ctrl.append(h('button', { class: 'btn primary', type: 'button', text: '두 영상 처음부터', onclick: function () { clips[0].play(1); clips[1].play(-1); } }));
-    if (stage === 0) {
-      side.append(
-        h('p', { class: 'cap', text: '처음 질문' }),
-        h('p', { class: 'ws', style: 'font-size:31px;line-height:1.55' }, '물에 잉크 한 방울을 떨어뜨리고 찍은 영상과, 그 영상을 거꾸로 돌린 영상이다.'),
-        h('p', { class: 'big-q', style: 'font-size:46px', text: '영상 ㉯ 같은 일은 왜 실제로 일어나지 않을까?' }),
-        choice('a', '①'), choice('b', '②'),
-        h('div', { class: 'frame', style: 'margin-top:auto' },
-          h('p', { class: 'cap', text: '나의 예상 · 고른 까닭을 한 줄로 써 보자' }),
-          h('div', { class: 'fl' }, '나는', h('i', { class: 'sl short' }), '번을 골랐다.'),
-          h('div', { class: 'fl' }, '왜냐하면', h('i', { class: 'sl' }), '때문이다.')));
-      ctrl.append(h('p', { class: 'hint', text: '어느 쪽이 실제 영상인지는 누구나 안다. 까닭을 말할 수 있을까?' }));
-    } else {
-      side.append(
-        h('p', { class: 'cap', text: '핵심 질문' }),
-        h('p', { class: 'big-q', style: 'font-size:40px', text: '에너지가 보존되는데도 한쪽으로만 일어나는 까닭은 무엇일까?' }),
-        h('div', { class: 'col', style: 'gap:8px' }, ROAD.map(function (r, i) {
-          return h('button', { class: 'road', type: 'button', onclick: function () { goId(r[0]); } },
-            h('span', { class: 'rn', text: String(i + 1) }), h('span', {}, h('b', {}, rich(r[1])), h('small', {}, rich(r[2]))), h('span', { class: 'go', text: '바로 가기 →' }));
-        })));
-      ctrl.append(h('p', { class: 'hint', text: '잉크 분자가 몇 가지 방법으로 놓일 수 있는지 세어 보면 답이 보인다.' }));
-    }
-  }
-  render();
-  return {
-    annoKey: function () { return 'intro:' + stage; },
-    tick: function (dt) { drawTwin(cv.ctx, clips, dt, false); },
-  };
-}
 
 /* ═══════════════ 1. 비가역 현상 : 세 가지 영상을 앞으로 · 거꾸로 ═══════════════ */
 const GAS_A = 0.5;
 const CLIPS3 = {
-  heat: heatFrames(9, 7),
+  heat: heatFrames(10),
   gas: gasFrames(46, GAS_A, 8, 11),
   ink: inkFrames(120, 0.5, 9, 3),
 };
@@ -328,7 +250,7 @@ function sceneIrrev(root) {
         if (k === 'heat') {
           drawHeat(c, fr, { x: 45, y: 56, w: 500, h: 224 }, now, { size: 23 });
           let tot = 0; for (let i = 0; i < fr.length; i++) tot += fr[i];
-          txt(c, '전체 에너지 ' + tot + ' (그대로)', 295, 24, { size: 21, weight: 600, color: COL.muted, align: 'center' });
+          txt(c, '전체 에너지 ' + Math.round(tot) + ' (그대로)', 295, 24, { size: 21, weight: 600, color: COL.muted, align: 'center' });
         } else if (k === 'gas') {
           drawGas(c, fr, { x: 35, y: 62, w: 520 }, { aspect: GAS_A, wall: clip.index() < CLIPS3.gas.wallUntil, r: 10 });
         } else {
@@ -893,91 +815,11 @@ function sceneEx(root) {
   };
 }
 
-/* ═══════════════ 마무리 : 처음 질문 해결 · 시간의 화살 ═══════════════ */
-const CLOSE_STEPS = [
-  ['잉크 알갱이는 물 분자와 부딪히며 아무 쪽으로나 움직인다', '어느 쪽으로 가라고 정해 준 것이 없다.'],
-  ['한곳에 모인 배치는 경우의 수가 아주 적다', '알갱이 하나하나가 모두 그 좁은 곳에 있어야 한다.'],
-  ['골고루 퍼진 배치는 경우의 수가 압도적으로 많다', '그래서 시간이 지나면 거의 언제나 퍼진 상태가 된다 → 엔트로피 증가'],
-  ['거꾸로 모이는 것도 에너지 보존에는 어긋나지 않는다', '다만 확률이 사실상 0 이라 일어나지 않는다.'],
-];
-function sceneClose(root) {
-  let stage = 0, step = 0;
-  const cv = makeCanvas(1040, 700), clips = makeTwin();
-  const tabs = tabRow(['① 처음 질문 해결', '② 일반화 : 시간의 화살'], function (i) { stage = i; render(); });
-  const ctrl = h('div', { class: 'ctrl', style: 'padding:10px 22px 14px;min-height:86px' });
-  const side = h('div', { class: 'col', style: 'gap:16px;flex:1;min-height:0' });
-  root.append(h('div', { class: 'col', style: 'height:100%;gap:14px' },
-    h('div', { class: 'tabs', style: 'grid-template-columns:repeat(2,1fr)', role: 'tablist' }, tabs),
-    h('div', { class: 'row', style: 'gap:22px;flex:1;min-height:0' },
-      h('section', { class: 'panel col fix', style: 'padding:0;gap:0' }, cv.c, ctrl),
-      h('section', { class: 'panel col fill pad', style: 'gap:0;min-height:0' }, side))));
-  let nextBtn = null, stepList = null, answerBox = null;
-  function renderSteps() {
-    stepList.replaceChildren();
-    CLOSE_STEPS.slice(0, step).forEach(function (s, i) { stepList.append(h('div', { class: 'why' }, h('span', { class: 'wn', text: String(i + 1) }), h('b', {}, s[0]), h('span', {}, s[1]))); });
-    answerBox.hidden = step < CLOSE_STEPS.length;
-    nextBtn.disabled = step >= CLOSE_STEPS.length;
-    nextBtn.textContent = step >= CLOSE_STEPS.length ? '설명 끝' : '다음 단계 (' + (step + 1) + '/' + CLOSE_STEPS.length + ')';
-  }
-  function render() {
-    selectTab(tabs, stage);
-    side.replaceChildren(); ctrl.replaceChildren();
-    if (stage === 0) {
-      stepList = h('div', { class: 'col', style: 'gap:12px' });
-      answerBox = h('div', { class: 'callout good', style: 'font-size:27px' }, h('b', { text: '답 : ② 에너지는 보존되지만 다른 까닭이 있다.' }), ' 자연은 경우의 수가 많은 쪽, 곧 엔트로피가 커지는 쪽으로 간다. 그래서 영상 ㉮만 실제로 찍을 수 있다.');
-      side.append(h('p', { class: 'cap', text: '처음 질문 · 영상 ㉯ 같은 일은 왜 일어나지 않을까?' }), stepList, answerBox,
-        h('p', { class: 'ws sm', style: 'margin-top:auto' }, '• 저절로 되돌아가지 않는 변화를 ', blank('1', '①', '비가역'), ' 현상이라고 한다.'));
-      nextBtn = h('button', { class: 'btn primary', type: 'button', style: 'min-width:240px', onclick: function () { if (step < CLOSE_STEPS.length) { step++; renderSteps(); } } });
-      ctrl.append(nextBtn, h('button', { class: 'btn', type: 'button', text: '처음부터', onclick: function () { step = 0; renderSteps(); } }));
-      renderSteps();
-    } else {
-      side.append(h('p', { class: 'cap', text: '개념 일반화' }),
-        h('p', { class: 'big-q', style: 'font-size:40px', text: '엔트로피가 늘어나는 쪽이 시간이 흐르는 쪽이다' }),
-        h('div', { class: 'gen hot' }, h('h3', { text: '거꾸로 돌리면 이상한 영상 : 비가역 현상' }),
-          h('ul', {}, h('li', { text: '따뜻한 방에서 얼음이 녹는다 · 뜨거운 커피가 식는다' }), h('li', { text: '향수 냄새가 방 안에 퍼진다' }), h('li', { text: '굴러가던 공이 마찰로 멈추며 열이 난다' }))),
-        h('div', { class: 'gen cold' }, h('h3', { text: '거꾸로 돌려도 자연스러운 영상' }),
-          h('ul', {}, h('li', { text: '마찰이 없는 진자의 흔들림' }), h('li', { text: '당구공 두 개가 부딪혀 튕겨 나가는 순간' }))),
-        h('p', { class: 'hint', style: 'font-size:23px' }, '※ 엔트로피가 늘지 않는 변화는 거꾸로 돌려도 물리 법칙에 맞아서, 영상만 보고는 시간의 방향을 알 수 없다.'));
-      ctrl.append(h('p', { class: 'hint', text: '잉크 한 방울 → 퍼지는 중 → 골고루 섞임 : 엔트로피가 커지는 차례가 곧 시간의 차례다.' }));
-    }
-  }
-  render();
-  return {
-    annoKey: function () { return 'close:' + stage; },
-    tick: function (dt, now) {
-      const c = cv.ctx;
-      if (stage === 0) { drawTwin(c, clips, dt, step >= 2); return; }
-      c.clearRect(0, 0, 1040, 700);
-      txt(c, '시간의 화살', 40, 46, { size: 30, weight: 700 });
-      const gx = 110, gy = 96, gw = 860, gh = 330;
-      arrow(c, gx, gy + gh, gx + gw + 20, gy + gh, { width: 4, color: COL['ink-2'], head: 18 });
-      arrow(c, gx, gy + gh, gx, gy - 10, { width: 4, color: COL['ink-2'], head: 18 });
-      txt(c, '시간', gx + gw + 10, gy + gh - 22, { size: 22, color: COL.muted, align: 'right' });
-      txt(c, '엔트로피', gx - 14, gy + 4, { size: 22, color: COL.muted, align: 'right' });
-      const yOf = function (u) { return gy + gh - 30 - (1 - Math.exp(-u * 3.2)) * (gh - 80); };
-      c.strokeStyle = COL.energy; c.lineWidth = 7; c.beginPath();
-      for (let i = 0; i <= 80; i++) { const u = i / 80; if (i) c.lineTo(gx + u * gw, yOf(u)); else c.moveTo(gx, yOf(0)); }
-      c.stroke();
-      // 곡선 위 세 때의 비커 : 잉크 한 방울 → 퍼지는 중 → 골고루 섞임
-      [[0.06, 0, '잉크 한 방울'], [0.38, 70, '퍼지는 중'], [0.86, INK_TWIN.length - 1, '골고루 섞임']].forEach(function (s) {
-        const x = gx + s[0] * gw, y = yOf(s[0]), bw = 96, bh = bw * 1.2, by = gy + gh + 30;
-        dashLine(c, x, y + 12, x, by - 18, COL.muted, 2);
-        dot(c, x, y, 11, COL.energy);
-        drawInk(c, INK_TWIN[s[1]], { x: x - bw / 2, y: by, w: bw, h: bh });
-        txt(c, s[2], x, by + bh + 24, { size: 20, weight: 700, align: 'center' });
-      });
-      const tt = (now % 5) / 5;
-      arrow(c, gx + 200, 652, gx + 200 + tt * (gw - 240), 652, { width: 6, color: COL.heat, head: 22 });
-      txt(c, '저절로 일어나는 방향 →', gx + 200, 684, { size: 20, weight: 700, color: COL.heat });
-    },
-  };
-}
-
 /* ═══════════════ 확인 활동 : 거꾸로 영상 맞히기 ═══════════════
    정방향 · 거꾸로 · 알 수 없다 가운데 고른다. 진자와 탄성 충돌처럼 엔트로피가 늘지 않는 움직임은 '알 수 없다'. */
 const BIG_GAS = gasFrames(70, 0.55, 8, 41);
 const BIG_INK = inkFrames(170, 0.55, 9, 77);
-const BIG_HEAT = heatFrames(9, 19);
+const BIG_HEAT = heatFrames(10);
 /** 튀는 공 : 튈 때마다 높이가 줄어든다 (높이 0~1) */
 const BALL = (function () {
   const out = []; let y = 1, v = 0; const g = 3.2, e = 0.74, dt = 1 / FPS;

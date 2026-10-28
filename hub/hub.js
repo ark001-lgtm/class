@@ -3,9 +3,8 @@
    교과 → 과목 → 단원 → 소단원. 목록은 tools/build.mjs 가 catalog.json 과 lessons/ 폴더를 읽어 이 파일 아래에 넣어 준다.
    로그인·저장 없음. 이 기기에서 마지막으로 본 과목과 화면 밝기만 브라우저에 기억한다. */
 const DATA = JSON.parse(document.getElementById('hub-data').textContent);
-const STATUS = { ready: '수업 가능', fix: '고칠 것 있음', prep: '준비 중' };
 const $ = function (id) { return document.getElementById(id); };
-const side = $('side'), main = $('main'), qInput = $('q'), yearSel = $('year'), dlg = $('memo');
+const side = $('side'), main = $('main'), qInput = $('q'), yearSel = $('year'), dlg = $('memo'), sheet = $('sheet');
 let year = DATA.current, subjId = null, query = '', offlineReady = false;
 
 /* 작은 도구 */
@@ -30,7 +29,6 @@ function add(e, c) {
 const ICONS = {
   play: '<path d="M8 5.2v13.6L19 12z" fill="currentColor" stroke="none"/>',
   doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
-  down: '<path d="M12 4v11M7 10.5l5 5 5-5M5 20h14"/>',
   note: '<path d="M5 4h14v11l-5 5H5z"/><path d="M14 20v-5h5M9 9h6M9 13h3"/>',
 };
 function icon(n) {
@@ -67,11 +65,7 @@ function subjects() {
   return out;
 }
 function findSubj(id) { return subjects().find(function (s) { return s.id === id; }) || null; }
-function counts(s) {
-  const c = { total: 0, ready: 0, fix: 0 };
-  s.units.forEach(function (u) { u.lessons.forEach(function (l) { c.total++; if (l.status !== 'prep') c.ready++; if (l.status === 'fix') c.fix++; }); });
-  return c;
-}
+function hasLesson(s) { return s.units.some(function (u) { return u.lessons.some(function (l) { return l.status !== 'prep'; }); }); }
 
 /* 주소 : #과목  또는 지난 학년도는  #2025/과목 */
 function readHash() {
@@ -90,7 +84,7 @@ function pickDefault() {
   const last = load('hub-subject');
   if (last && findSubj(last)) { subjId = last; return; }
   const all = subjects();
-  const ready = all.find(function (s) { return counts(s).ready > 0; });
+  const ready = all.find(hasLesson);
   subjId = (ready || all[0] || {}).id || null;
 }
 function choose(id) {
@@ -121,10 +115,8 @@ function renderSide() {
     return h('div', { class: 'group' },
       h('div', { class: 'group-name', text: g.name }),
       g.subjects.map(function (s) {
-        const c = counts(s);
         return h('button', { class: 'subj', type: 'button', 'aria-current': String(!query && s.id === subjId), onclick: function () { choose(s.id); } },
-          h('span', { text: s.name }),
-          h('span', { class: 'cnt', title: '수업 화면이 있는 소단원 / 전체 소단원' }, c.fix ? h('i', { title: '고칠 것 있음' }) : null, c.ready + '/' + c.total));
+          h('span', { text: s.name }));
       }));
   }));
 }
@@ -144,26 +136,13 @@ function renderMain() {
 function subjectView() {
   const s = findSubj(subjId);
   if (!s) return [h('p', { class: 'empty', text: '왼쪽에서 과목을 고르세요.' })];
-  const c = counts(s);
-  const onlyReady = load('hub-only-ready') === '1';
-  const units = s.units.map(function (u) {
-    const r = u.lessons.filter(function (l) { return l.status !== 'prep'; }).length;
-    const shown = onlyReady ? u.lessons.filter(function (l) { return l.status !== 'prep'; }) : u.lessons;
-    if (!shown.length) return null;
-    return h('section', { class: 'unit' },
-      h('div', { class: 'unit-head' }, h('h2', { text: u.name }), h('small', { text: r + ' / ' + u.lessons.length })),
-      h('div', { class: 'cards' }, shown.map(function (l) { return card(l, s); })));
-  });
   return [
     h('div', { class: 'subj-head' }, h('h1', { text: s.name }), s.note ? h('p', { class: 'note', text: s.note }) : null),
-    h('div', { class: 'legend' },
-      h('span', { class: 'chip ready', text: STATUS.ready + ' ' + (c.ready - c.fix) }),
-      h('span', { class: 'chip fix', text: STATUS.fix + ' ' + c.fix }),
-      h('span', { class: 'chip prep', text: STATUS.prep + ' ' + (c.total - c.ready) }),
-      h('button', { class: 'tbtn only', type: 'button', 'aria-pressed': String(onlyReady), text: '수업 화면 있는 것만',
-        onclick: function () { store('hub-only-ready', onlyReady ? '0' : '1'); renderMain(); } })),
-    units,
-    onlyReady && !c.ready ? h('p', { class: 'empty', text: '이 과목은 아직 수업 화면이 없습니다. [수업 화면 있는 것만]을 끄면 모든 소단원이 보입니다.' }) : null,
+    s.units.map(function (u) {
+      return h('section', { class: 'unit' },
+        h('div', { class: 'unit-head' }, h('h2', { text: u.name })),
+        h('div', { class: 'cards' }, u.lessons.map(function (l) { return card(l, s); })));
+    }),
   ];
 }
 function norm(s) { return String(s).toLowerCase().replace(/\s+/g, ''); }
@@ -186,22 +165,14 @@ function searchView() {
 function card(l, s, where) {
   const ready = l.status !== 'prep';
   const last = l.memo[0];
-  let meta = null;
-  if (last) {
-    // 메모 줄을 누르면 수업 메모 창이 열린다
-    const todo = l.status === 'fix' && last.next.length;
-    meta = h('button', { class: 'meta' + (todo ? ' todo' : ''), type: 'button', title: '수업 메모 보기', onclick: function () { openMemo(l, s); } },
-      icon('note'),
-      h('span', { text: todo
-        ? '다음에 바꿀 것 : ' + last.next[0] + (last.next.length > 1 ? ' 외 ' + (last.next.length - 1) + '개' : '')
-        : '메모 ' + fmtDate(last.date) + (last.label ? ' · ' + last.label : '') }));
-  }
+  // 메모 줄을 누르면 수업 메모 창이 열린다
+  const meta = last ? h('button', { class: 'meta', type: 'button', title: '수업 메모 보기', onclick: function () { openMemo(l, s); } },
+    icon('note'), h('span', { text: '메모 ' + fmtDate(last.date) + (last.label ? ' · ' + last.label : '') })) : null;
   const acts = [];
   if (ready) acts.push(h('a', { class: 'btn primary start', href: l.href }, icon('play'), '수업 시작'));
-  if (l.worksheet) acts.push(h('a', { class: 'btn', href: l.worksheet, target: '_blank', rel: 'noopener', title: '학습지 PDF 열기' }, icon('doc'), '학습지'));
-  if (ready) acts.push(h('a', { class: 'btn', href: l.file, download: l.fileName, title: 'USB 에 담아 갈 HTML 파일 하나로 내려받기' }, icon('down'), '내려받기'));
+  if (l.worksheet) acts.push(h('button', { class: 'btn', type: 'button', title: '학습지 보기 · PDF 내려받기', onclick: function () { openSheet(l, s); } }, icon('doc'), '학습지'));
   return h('article', { class: 'card' + (ready ? '' : ' prep') },
-    h('div', { class: 'card-top' }, h('span', { class: 'no', text: l.no }), h('span', { class: 'chip ' + l.status, text: STATUS[l.status] })),
+    h('div', { class: 'card-top' }, h('span', { class: 'no', text: l.no })),
     h('h3', { text: l.title }),
     where ? h('p', { class: 'where', text: where }) : null,
     meta,
@@ -234,6 +205,74 @@ function openMemo(l, s) {
 function closeMemo() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
 $('memo-close').addEventListener('click', closeMemo);
 dlg.addEventListener('click', function (e) { if (e.target === dlg) closeMemo(); });
+
+/* ── 학습지 : 쪽마다 그려 보여 주고, PDF 로 내려받는다 ──
+   PDF 를 그리는 데 pdf.js 를 쓴다 (처음 열 때 한 번 받아 온다). 못 받으면 새 창에서 열기로 대신한다. */
+const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+let pdfLib = null;
+function loadPdfJs() {
+  if (pdfLib) return pdfLib;
+  pdfLib = new Promise(function (resolve, reject) {
+    const s = document.createElement('script');
+    s.src = PDFJS + 'pdf.min.js';
+    s.onload = function () {
+      if (!window.pdfjsLib) { reject(new Error('pdf.js')); return; }
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS + 'pdf.worker.min.js';
+      resolve(window.pdfjsLib);
+    };
+    s.onerror = reject;
+    document.head.append(s);
+  });
+  pdfLib.catch(function () { pdfLib = null; });
+  return pdfLib;
+}
+let sheetJob = 0;
+function openSheet(l, s) {
+  const job = ++sheetJob, body = $('sheet-body');
+  $('sheet-kicker').textContent = s.name + ' · ' + l.no;
+  $('sheet-title').textContent = l.title + ' 학습지';
+  const down = $('sheet-down');
+  down.href = l.worksheet; down.setAttribute('download', l.worksheetName);
+  body.replaceChildren(h('p', { class: 'hint', text: '학습지를 불러오는 중…' }));
+  if (sheet.showModal) sheet.showModal(); else sheet.setAttribute('open', '');
+  const fallback = function () {
+    if (job !== sheetJob) return;
+    body.replaceChildren(h('p', { class: 'empty' }, '미리 보기를 불러오지 못했습니다. 위의 [PDF 내려받기]를 누르거나 ',
+      h('a', { href: l.worksheet, target: '_blank', rel: 'noopener', text: '새 창에서 열어' }), ' 보세요.'));
+  };
+  loadPdfJs().then(function (lib) { return lib.getDocument(l.worksheet).promise; }).then(function (pdf) {
+    if (job !== sheetJob) return;
+    body.replaceChildren();
+    const width = Math.max(300, body.clientWidth - 4), dpr = Math.min(2, window.devicePixelRatio || 1);
+    let chain = Promise.resolve();
+    for (let p = 1; p <= pdf.numPages; p++) {
+      chain = chain.then(function () { return pdf.getPage(p); }).then(function (page) {
+        if (job !== sheetJob) return null;
+        const vp = page.getViewport({ scale: width / page.getViewport({ scale: 1 }).width * dpr });
+        const cv = document.createElement('canvas');
+        cv.className = 'sheet-page'; cv.width = Math.round(vp.width); cv.height = Math.round(vp.height);
+        body.append(cv);
+        return page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      });
+    }
+    return chain;
+  }).catch(fallback);
+}
+function closeSheet() { sheetJob++; if (sheet.close) sheet.close(); else sheet.removeAttribute('open'); }
+$('sheet-close').addEventListener('click', closeSheet);
+sheet.addEventListener('click', function (e) { if (e.target === sheet) closeSheet(); });
+sheet.addEventListener('close', function () { sheetJob++; });
+
+/* ── 새 판 알림 : 앱처럼 띄워 둔 아이패드가 다시 앞으로 나올 때, 올린 새 내용이 있으면 알려 준다 ── */
+function checkUpdate() {
+  if (!/^https?:$/.test(location.protocol) || !window.fetch) return;
+  fetch('version.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (v) {
+    if (v && v.v && v.v !== DATA.version) $('update').hidden = false;
+  }).catch(function () { /* 인터넷이 없으면 지금 것을 쓴다 */ });
+}
+$('update-go').addEventListener('click', function () { location.reload(); });
+document.addEventListener('visibilitychange', function () { if (!document.hidden) checkUpdate(); });
+window.addEventListener('focus', checkUpdate);
 
 /* ── 화면 밝기 ── */
 function isDark() {
@@ -275,7 +314,7 @@ fullBtn.addEventListener('click', function () {
 qInput.addEventListener('input', function () { query = qInput.value; renderSide(); renderMain(); main.scrollTop = 0; });
 qInput.addEventListener('keydown', function (e) { if (e.key === 'Escape') { qInput.value = ''; query = ''; renderSide(); renderMain(); } });
 document.addEventListener('keydown', function (e) {
-  if (e.key === '/' && document.activeElement !== qInput && !dlg.open) { e.preventDefault(); qInput.focus(); }
+  if (e.key === '/' && document.activeElement !== qInput && !dlg.open && !sheet.open) { e.preventDefault(); qInput.focus(); }
 });
 yearSel.addEventListener('change', function () { year = yearSel.value; pickDefault(); writeHash(); render(); main.scrollTop = 0; });
 window.addEventListener('hashchange', function () { readHash(); pickDefault(); render(); });
@@ -286,6 +325,7 @@ const savedTheme = load('suup-theme');
 if (savedTheme === 'dark' || savedTheme === 'light') document.documentElement.setAttribute('data-theme', savedTheme);
 themeLabel(); syncFull();
 readHash(); pickDefault(); writeHash(); render();
+checkUpdate();
 
 /* 한 번 열면 이 기기에 담아 두어 인터넷이 끊겨도 열리게 한다 (USB 로 연 파일에서는 하지 않음) */
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {

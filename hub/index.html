@@ -49,6 +49,17 @@
   </div>
   <div class="memo-body" id="memo-body"></div>
 </dialog>
+<dialog id="sheet" class="sheet" aria-labelledby="sheet-title">
+  <div class="memo-head">
+    <div><small id="sheet-kicker"></small><h2 id="sheet-title"></h2></div>
+    <div class="sheet-tools">
+      <a class="tbtn primary" id="sheet-down" href="#" download>PDF 내려받기</a>
+      <button class="tbtn" type="button" id="sheet-close">닫기</button>
+    </div>
+  </div>
+  <div class="sheet-body" id="sheet-body"></div>
+</dialog>
+<div id="update" role="status" hidden>새로 고친 수업 내용이 있습니다. <button class="tbtn" type="button" id="update-go">새로 고침</button></div>
 <div id="toast" role="status" hidden></div>
 <script id="hub-data" type="application/json">@@HUB_DATA@@</script>
 <script>

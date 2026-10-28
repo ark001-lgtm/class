@@ -1,9 +1,13 @@
 'use strict';
 /* 나의 수업 웹앱 : 수업 엔진 (2-3 열역학 제1법칙에서 떼어 냄)
-   무대(1920×1080) · 넘기기 · 목차 · 빈칸 · 캔버스 그리기 도구 · 펜 필기 · 확대 · 전체 화면 · 테마.
+   무대(폭 1920) · 넘기기 · 빈칸 · 캔버스 그리기 도구 · 펜 필기 · 확대 · 전체 화면 · 테마.
    소단원은 장면만 만든다 (lessons/<과목>/<소단원>/scenes.js). 합치기가 이 파일 + 장면 + start.js 를 HTML 하나로 묶는다. */
-/* ═══════════════ 바탕 : 무대 크기, 색, 캔버스, 반복 ═══════════════ */
-const W0 = 1920, H0 = 1080;
+/* ═══════════════ 바탕 : 무대 크기, 색, 캔버스, 반복 ═══════════════
+   장면은 늘 1920×976 크기로 그린다. 무대 높이는 화면 비율을 따른다 : 전자칠판(16:9)은 1080,
+   아이패드(가로 1180×820)처럼 덜 납작한 화면은 무대를 위아래로 늘려(최대 1400) 빈 띠 없이 꽉 채우고,
+   장면은 가운데 둔다. 늘어난 위아래 여백에도 펜슬로 쓸 수 있다. */
+const W0 = 1920, BAR_H = 104, SCENE_H = 976;
+let H0 = 1080;
 let SCALE = 1;
 let RES_Z = 1;              // 캔버스를 이 확대 배율에 맞춰 선명하게 그린다 (확대가 멈추면 맞춘다)
 const MAX_CANVAS_PX = 1e7;  // 캔버스 하나의 최대 픽셀 수 (아이패드 사파리 한도 1677만 픽셀보다 넉넉히 작게)
@@ -22,6 +26,12 @@ function fit() {
   const cs = getComputedStyle(frame);
   const pl = parseFloat(cs.paddingLeft) || 0, pr = parseFloat(cs.paddingRight) || 0, pt = parseFloat(cs.paddingTop) || 0, pb = parseFloat(cs.paddingBottom) || 0;
   const aw = Math.max(50, frame.clientWidth - pl - pr), ah = Math.max(50, frame.clientHeight - pt - pb);
+  H0 = Math.round(clamp(W0 * ah / aw, 1080, 1400));
+  VIEW_H = H0 - BAR_H; INK_H = VIEW_H; INK_OY = Math.round((VIEW_H - SCENE_H) / 2);
+  stage.style.height = H0 + 'px';
+  zoomEl.style.height = VIEW_H + 'px';
+  document.getElementById('scene').style.marginTop = INK_OY + 'px';
+  clampPan(); applyZoom();
   const s = Math.min(aw / W0, ah / H0);
   SCALE = s;
   stage.style.transform = 'translate(' + (pl + (aw - W0 * s) / 2) + 'px,' + (pt + (ah - H0 * s) / 2) + 'px) scale(' + s + ')';
@@ -218,8 +228,8 @@ function txtU(ctx, n, unit, x, y, o) {
   return wn + wu;
 }
 
-/* ═══════════════ 장면 : 넘기기 · 목차 ═══════════════
-   소단원 장면 파일(lessons/…/scenes.js)이 SCENE_LIST 를 정하고, 맨 앞에 목차가 붙는다.
+/* ═══════════════ 장면 : 넘기기 ═══════════════
+   소단원 장면 파일(lessons/…/scenes.js)이 SCENE_LIST 를 정한다. 목차 화면 없이 첫 장면부터 시작한다.
    합치기(tools/build.mjs)가 SUUP = { id, title, kicker, hub } 를 맨 앞에 넣어 준다. */
 let idx = 0;
 function goId(id) { const i = SCENES.findIndex(function (s) { return s.id === id; }); if (i >= 0) go(i); }
@@ -238,7 +248,7 @@ function go(i) {
   document.getElementById('kicker').textContent = sc.part || sc.kicker;
   const chip = document.getElementById('ws-chip');
   chip.textContent = sc.ws || ''; chip.hidden = !sc.ws;
-  document.getElementById('count').textContent = i ? i + ' / ' + (SCENES.length - 1) : '';
+  document.getElementById('count').textContent = (i + 1) + ' / ' + SCENES.length;
   document.getElementById('btn-prev').disabled = i === 0;
   document.getElementById('btn-next').disabled = i === SCENES.length - 1;
   current = sc.make(main) || {};
@@ -246,75 +256,46 @@ function go(i) {
   try { history.replaceState(null, '', '#' + sc.id); } catch (e) { /* 주소를 못 바꿔도 된다 */ }
 }
 
-/* ── 목차 ── */
-function sceneHome(root) {
-  const card = function (i) {
-    const sc = SCENES[i];
-    return h('button', { class: 'toc-card', type: 'button', onclick: function () { go(i); } },
-      h('span', { class: 'toc-num', text: String(i).padStart(2, '0') }),
-      h('span', { class: 'toc-title' }, sc.title, h('span', { class: 'toc-sub' }, rich(sc.sub || ''))),
-      h('span', { class: 'toc-ws', text: sc.ws || '' }));
-  };
-  // 수업은 한 줄로 이어진다 : 앞 절반은 왼쪽, 나머지는 오른쪽 칸에 차례대로
-  const cards = []; for (let i = 1; i < SCENES.length; i++) cards.push(card(i));
-  const half = Math.ceil(cards.length / 2);
-  const msg = h('span', {});
-  const say = function (t) { msg.textContent = t; };
-  // 나의 수업 웹앱에서 열었을 때만 : 수업 목록(허브)으로 돌아가는 단추. USB 로 연 파일에서는 숨는다
-  const hubBtn = SUUP.hub && /^https?:$/.test(location.protocol) ? h('a', { class: 'btn small', href: SUUP.hub, style: 'text-decoration:none', text: '← 수업 목록으로' }) : null;
-  const resetBtn = h('button', { class: 'btn small', type: 'button', text: '빈칸 모두 가리기', onclick: function () { REVEALED = {}; say('모든 빈칸을 가렸습니다.'); } });
-  // 필기 모두 지우기 : 실수로 지우지 않게 두 번 눌러야 한다
-  let armedUntil = 0;
-  const inkBtn = h('button', { class: 'btn small', type: 'button', text: '필기 모두 지우기', onclick: function () {
-    if (performance.now() < armedUntil) { armedUntil = 0; clearAllInk(); inkBtn.textContent = '필기 모두 지우기'; say('모든 화면의 필기를 지웠습니다.'); return; }
-    armedUntil = performance.now() + 4000; inkBtn.textContent = '한 번 더 누르면 지웁니다'; say('');
-    setTimeout(function () { if (armedUntil && performance.now() >= armedUntil) { armedUntil = 0; inkBtn.textContent = '필기 모두 지우기'; } }, 4100);
-  } });
-  const themeBtn = h('button', { class: 'btn small', id: 'btn-theme', type: 'button', onclick: function () { setTheme(isDark() ? 'light' : 'dark'); } });
-  const penBtn = h('button', { class: 'btn small', type: 'button', onclick: function () { setPenAuto(!INK.penAuto); syncPen(); } });
-  const syncPen = function () { penBtn.textContent = '애플 펜슬로 바로 쓰기 : ' + (INK.penAuto ? '켬' : '끔'); penBtn.setAttribute('aria-pressed', String(INK.penAuto)); };
-  syncPen();
-  const hint = typeof HOME_HINT === 'string' ? HOME_HINT : '번호가 붙은 빈칸은 누르면 답이 나오고 다시 누르면 가려집니다.';
-  root.append(h('div', { class: 'toc' },
-    h('section', { class: 'toc-col' }, cards.slice(0, half)),
-    h('section', { class: 'toc-col' }, cards.slice(half)),
-    h('div', { class: 'toc-bottom' },
-      h('div', { class: 'toc-foot' }, hubBtn, resetBtn, inkBtn, themeBtn, penBtn, msg),
-      h('p', { class: 'hint' }, hint + ' 애플 펜슬은 어디에나 바로 써지고, 톡 누르면 단추가 눌립니다. 손가락·마우스로 쓰려면 [손 필기]를 켜세요. 확대는 오른쪽 위 [+] 또는 두 손가락으로 벌리고, 가운데 숫자를 누르면 원래 크기입니다. 필기는 화면마다 따로 남고 이 탭을 닫으면 사라집니다. ← → 로 넘깁니다.'))));
-  themeLabel();
-  return {};
-}
 /** 필기를 이 탭에 잠시 담아 두는 이름 (소단원마다 따로) */
 function inkStoreKey() { return 'suup-ink:' + SUUP.id; }
 
 /* ═══════════════ 필기 : 애플 펜슬 · 손가락 · 마우스 ═══════════════
-   · 애플 펜슬(pointerType 'pen')은 언제나 바로 써진다 (목차에서 끌 수 있음).
-     손가락·마우스는 [손 필기]를 켰을 때나 [빈 판서]에서만 쓴다.
+   · 애플 펜슬(pointerType 'pen')은 언제나 바로 써진다.
+   · 아이패드에서는 손가락으로 절대 써지지 않는다 (단추 누르기 · 두 손가락 확대 · 끌어 옮기기만).
+     전자칠판 · 컴퓨터에서는 손가락 · 마우스가 [손 필기]를 켰을 때나 [빈 판서]에서만 쓴다.
    · 톡 누르면(거의 안 움직이고 짧게) 쓰지 않고 그 자리의 단추를 누른다. 끌면 글씨가 된다.
      슬라이더는 펜이든 손가락이든 늘 슬라이더로 움직인다.
-   · 필기는 화면마다(과정 탭·맞히기 문제마다) 따로 남는다. 좌표는 무대 기준(1920 폭)이라 화면 크기가 바뀌어도 그대로.
+   · 필기는 화면마다(과정 탭·맞히기 문제마다) 따로 남는다. 좌표는 장면(1920×976) 기준이라 화면 크기가 바뀌어도 그대로.
    · 이 탭을 닫기 전까지 sessionStorage 에 남는다 (아이패드가 페이지를 다시 불러와도 살아 있다). */
-const INK_W = 1920, INK_H = 976;
+/** 아이패드 (iPadOS 사파리는 맥처럼 알리므로 터치 지점 수로 가린다) */
+const IS_IPAD = /iPad/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+const INK_W = 1920;
+let INK_H = SCENE_H, INK_OY = 0;   // 필기 층 높이(= 장면이 보이는 곳 높이), 장면이 아래로 밀린 만큼
 const PEN_W = 6, HL_W = 26, HL_ALPHA = 0.35, HL_COLOR = '#FFD60A', ERASE_R = 22, TAP_MS = 600;
 /** 이만큼(화면 px) 안 움직이면 '톡'. 손가락은 펜보다 흔들림이 커서 넉넉하게 */
 function tapPx(kind) { return kind === 'pen' ? 6 : 12; }
 const INK = {
   pages: {}, hist: {}, key: null,
   tool: 'pen', color: 'pen',
-  hand: false, handAuto: false, board: false, penAuto: true, sawPen: false,
+  hand: false, handAuto: false, board: false, sawPen: false,
   active: null, synth: false, suppressUntil: 0, supX: 0, supY: 0,
 };
 function makeLayer() {
   const c = document.createElement('canvas');
-  c.style.width = INK_W + 'px'; c.style.height = INK_H + 'px';
+  c.style.width = INK_W + 'px';
   const o = { c: c, ctx: c.getContext('2d') };
   o.resize = function () {
     const k = canvasK(INK_W, INK_H, 3);
+    c.style.height = INK_H + 'px';
     c.width = Math.round(INK_W * k); c.height = Math.round(INK_H * k);
-    o.ctx.setTransform(k, 0, 0, k, 0, 0);
+    o.ctx.setTransform(k, 0, 0, k, 0, k * INK_OY);   // 필기 좌표는 장면 기준
   };
   o.resize(); layers.push(o);
   return o;
+}
+/** 필기 층 전체를 비운다 (장면 기준 좌표로 옮겨 둔 것과 상관없이) */
+function clearLayer(l) {
+  l.ctx.save(); l.ctx.setTransform(1, 0, 0, 1, 0, 0); l.ctx.clearRect(0, 0, l.c.width, l.c.height); l.ctx.restore();
 }
 const inkWrap = document.getElementById('ink-wrap'), boardEl = document.getElementById('board');
 const inkLayer = makeLayer(), liveLayer = makeLayer();
@@ -358,12 +339,12 @@ function paintStroke(ctx, s) {
 }
 function redrawInk() {
   const ctx = inkLayer.ctx;
-  ctx.clearRect(0, 0, INK_W, INK_H);
+  clearLayer(inkLayer);
   (INK.pages[INK.key] || []).forEach(function (s) { paintStroke(ctx, s); });
 }
 /** 쓰는 중인 획 : 새로 들어온 마디만 덧그린다. 형광펜은 층 전체를 반투명하게 */
 function liveBegin(a) {
-  liveLayer.ctx.clearRect(0, 0, INK_W, INK_H);
+  clearLayer(liveLayer);
   liveLayer.c.style.opacity = a.t === 'hl' ? String(HL_ALPHA) : '1';
   a.drawn = 0;
   liveExtend(a);
@@ -384,7 +365,7 @@ function liveExtend(a) {
 }
 function eraserCursor(x, y) {
   const c = liveLayer.ctx;
-  c.clearRect(0, 0, INK_W, INK_H);
+  clearLayer(liveLayer);
   liveLayer.c.style.opacity = '1';
   c.strokeStyle = COL.muted; c.lineWidth = 2; c.setLineDash([6, 5]);
   c.beginPath(); c.arc(x, y, ERASE_R, 0, Math.PI * 2); c.stroke(); c.setLineDash([]);
@@ -475,7 +456,7 @@ function clearAllInk() {
 }
 function abortInk() {
   INK.active = null;
-  liveLayer.ctx.clearRect(0, 0, INK_W, INK_H);
+  clearLayer(liveLayer);
 }
 
 /* 도구 막대 */
@@ -496,10 +477,6 @@ function setBoard(on) {
   syncTools();
   syncInkKey();
 }
-function setPenAuto(on) {
-  INK.penAuto = on;
-  try { localStorage.setItem('suup-pen-auto', on ? '1' : '0'); } catch (e) { /* 이번만 적용 */ }
-}
 /** 펜슬을 처음 쓰면, 색을 고르느라 저절로 켜졌던 손 필기를 끈다 (손바닥이 써지지 않게) */
 function notePen() {
   if (INK.sawPen) return;
@@ -510,34 +487,38 @@ pickBtns.forEach(function (b) {
   b.addEventListener('click', function () {
     INK.tool = b.dataset.tool;
     if (b.dataset.color) INK.color = b.dataset.color;
-    // 펜이 없는 기기(전자칠판·마우스)에서 펜을 고르면 바로 손으로 쓸 수 있게
-    if (!INK.sawPen && !INK.hand) { INK.hand = true; INK.handAuto = true; }
+    // 펜이 없는 기기(전자칠판·마우스)에서 펜을 고르면 바로 손으로 쓸 수 있게 (아이패드는 펜슬만)
+    if (!IS_IPAD && !INK.sawPen && !INK.hand) { INK.hand = true; INK.handAuto = true; }
     syncTools();
   });
 });
 toolHand.addEventListener('click', function () { INK.hand = !INK.hand; INK.handAuto = false; syncTools(); });
 toolBoard.addEventListener('click', function () { abortInk(); setBoard(!INK.board); });
 document.getElementById('tool-undo').addEventListener('click', undoInk);
-document.getElementById('tool-clear').addEventListener('click', clearPage);
+// 이 화면 필기 지우기. 안내 속 단추로 모든 화면의 필기도 한 번에 지울 수 있다 (다음 시간 수업 전에)
+document.getElementById('tool-clear').addEventListener('click', function () {
+  clearPage();
+  toast('이 화면의 필기를 지웠습니다. 되돌리기로 살릴 수 있어요.<br><button class="btn small" id="toast-all" type="button" style="margin-top:12px">모든 화면의 필기 지우기</button>', 6000);
+});
 
 /* 입력 */
-/** 화면 좌표 → 필기 좌표(수업 화면 1920×976 기준). 확대해 있어도 내용 기준 자리에 남는다 */
+/** 화면 좌표 → 필기 좌표(장면 1920×976 기준, 위아래 여백은 음수 · 976 넘음). 확대해 있어도 내용 기준 자리에 남는다 */
 function toInk(e) {
   const r = zoomEl.getBoundingClientRect(), k = SCALE * ZT.z;
-  return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k };
+  return { x: (e.clientX - r.left) / k, y: (e.clientY - r.top) / k - INK_OY };
 }
 function inkTargetOK(el) {
   if (!el || !el.closest) return false;
   if (el.closest('.bar')) return false;                               // 머리줄 단추는 늘 단추
-  if (!el.closest('#scene, #ink-wrap')) return false;
+  if (!el.closest('#view')) return false;
   if (!INK.board && el.closest('input[type="range"]')) return false;  // 슬라이더는 늘 슬라이더
   return true;
 }
 function wantsInk(kind, el) {
   if (!inkTargetOK(el)) return false;
-  if (INK.board) return true;
-  if (kind === 'pen') return INK.penAuto || INK.hand;
-  return INK.hand;
+  if (kind === 'pen') return true;      // 애플 펜슬은 늘 쓴다
+  if (IS_IPAD) return false;            // 아이패드 : 손가락으로는 쓰지 않는다
+  return INK.board || INK.hand;
 }
 stage.addEventListener('pointerdown', function (e) {
   if (e.pointerType === 'pen') notePen();
@@ -583,7 +564,7 @@ function inkEnd(e) {
   INK.active = null;
   e.preventDefault(); e.stopPropagation();
   try { stage.releasePointerCapture(e.pointerId); } catch (err) { /* 무시 */ }
-  liveLayer.ctx.clearRect(0, 0, INK_W, INK_H);
+  clearLayer(liveLayer);
   // 브라우저가 바로 뒤따라 보내는 click(같은 자리)은 버린다. 다른 자리를 누른 손가락 클릭은 그대로
   INK.suppressUntil = performance.now() + 400; INK.supX = e.clientX; INK.supY = e.clientY;
   if (!a.moved) {
@@ -638,7 +619,8 @@ document.addEventListener('click', function (e) {
    · Ctrl + 휠(노트북 터치패드 오므리기)로 확대, 휠로 옮기기. 키보드 + − 0
    · 필기는 내용 기준 좌표라 확대한 채 써도, 줄인 뒤에도 제자리에 있다
    · 움직이는 동안은 CSS 로만 키우고, 멈추면 캔버스를 그 배율로 다시 그려 글자가 선명해진다 */
-const VIEW_W = 1920, VIEW_H = 976, ZMIN = 1, ZMAX = 3;
+const VIEW_W = 1920, ZMIN = 1, ZMAX = 3;
+let VIEW_H = SCENE_H;                              // 머리줄 아래 보이는 곳 높이 (fit 이 무대 높이에 맞춘다)
 const ZOOM_STEPS = [1, 1.25, 1.5, 2, 2.5, 3];
 const ZT = { z: 1, x: 0, y: 0 };                 // #zoom 의 이동(무대 px)과 배율
 const VG = { touches: new Map(), pinch: null, drag: null, lastPen: -1e9, noClickUntil: 0 };

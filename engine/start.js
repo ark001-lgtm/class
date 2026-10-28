@@ -1,7 +1,7 @@
 /* ═══════════════ 시작 : 장면 파일 다음에 붙는다 ═══════════════ */
-const SCENES = [{ id: 'home', title: '목차', kicker: SUUP.kicker + ' · 전자칠판 수업 화면', make: sceneHome }].concat(SCENE_LIST);
+const SCENES = SCENE_LIST.slice();
+// 화면 밝기는 허브에서 고른 것을 따른다
 try { const t = localStorage.getItem('suup-theme'); if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t); } catch (e) { /* 기본 테마 */ }
-try { if (localStorage.getItem('suup-pen-auto') === '0') INK.penAuto = false; } catch (e) { /* 기본 : 켬 */ }
 readTheme(); themeLabel();
 if (window.matchMedia) {
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -18,7 +18,10 @@ function toast(html, ms) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(function () { t.hidden = true; }, ms || 6000);
 }
-document.getElementById('toast').addEventListener('click', function () { this.hidden = true; });
+document.getElementById('toast').addEventListener('click', function (e) {
+  if (e.target && e.target.id === 'toast-all') { clearAllInk(); }
+  this.hidden = true;
+});
 function fsElement() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
 function fsHelp() {
   const framed = (function () { try { return window.self !== window.top; } catch (e) { return true; } })();
@@ -54,7 +57,18 @@ function toggleFull() {
 }
 let FS_CHANGES = 0;
 ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (t) { document.addEventListener(t, function () { FS_CHANGES++; syncFull(); fit(); }); });
-document.getElementById('btn-home').addEventListener('click', function () { go(0); });
+// 수업 목록(허브)으로 : 나의 수업 웹앱에서 열었을 때만 보인다
+const hubLink = document.getElementById('btn-hub');
+if (SUUP.hub && /^https?:$/.test(location.protocol)) { hubLink.href = SUUP.hub; hubLink.hidden = false; }
+// 아이패드는 펜슬로만 쓰므로 [손 필기]가 필요 없다
+if (IS_IPAD) toolHand.hidden = true;
+// 아이패드를 세로로 들면 수업 화면이 작아진다 : 가로로 돌리라고 알려 준다 (누르면 닫힘)
+const rotateHint = document.getElementById('rotate-hint');
+let rotateClosed = false;
+function syncRotate() { rotateHint.hidden = rotateClosed || !(IS_IPAD || navigator.maxTouchPoints > 1) || window.innerWidth >= window.innerHeight; }
+rotateHint.addEventListener('click', function () { rotateClosed = true; syncRotate(); });
+window.addEventListener('resize', syncRotate);
+syncRotate();
 document.getElementById('btn-prev').addEventListener('click', function () { go(idx - 1); });
 document.getElementById('btn-next').addEventListener('click', function () { go(idx + 1); });
 document.getElementById('btn-full').addEventListener('click', toggleFull);

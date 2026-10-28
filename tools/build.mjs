@@ -140,9 +140,8 @@ function buildYear(catalog, srcBase, urlBase, hashPrefix) {
                 return {
                   id: l.id, no: no, title: l.title, status: status,
                   href: status === 'prep' ? null : rel,
-                  file: status === 'prep' ? null : rel + 'index.html',
-                  fileName: `${no} ${l.title}.html`.replace(/[\\/:*?"<>|]/g, ' '),
                   worksheet: hasPdf ? rel + 'worksheet.pdf' : null,
+                  worksheetName: `${no} ${l.title} 학습지.pdf`.replace(/[\\/:*?"<>|]/g, ' '),
                   memo: memo,
                 };
               }),
@@ -190,22 +189,27 @@ function main() {
 
   // 허브 한 장 : 틀 + 모양 + 동작 + 목록
   const built = new Date().toLocaleString('sv-SE', { timeZone: 'Asia/Seoul' }).slice(0, 16);
-  const data = JSON.stringify({ built: built, current: current, years: years }).replace(/</g, '\\u003c');
-  const hubHtml = fs.readFileSync(path.join(HUB, 'index.html'), 'utf8')
-    .split('/*@@HUB_CSS@@*/').join(fs.readFileSync(path.join(HUB, 'hub.css'), 'utf8'))
-    .split('/*@@HUB_JS@@*/').join(fs.readFileSync(path.join(HUB, 'hub.js'), 'utf8'))
-    .split('@@HUB_DATA@@').join(data);
-  put('index.html', hubHtml);
+  const hubFor = function (version) {
+    const data = JSON.stringify({ built: built, version: version, current: current, years: years }).replace(/</g, '\\u003c');
+    return fs.readFileSync(path.join(HUB, 'index.html'), 'utf8')
+      .split('/*@@HUB_CSS@@*/').join(fs.readFileSync(path.join(HUB, 'hub.css'), 'utf8'))
+      .split('/*@@HUB_JS@@*/').join(fs.readFileSync(path.join(HUB, 'hub.js'), 'utf8'))
+      .split('@@HUB_DATA@@').join(data);
+  };
   put('manifest.webmanifest', fs.readFileSync(path.join(HUB, 'manifest.webmanifest')));
   for (const f of fs.readdirSync(path.join(HUB, 'icons'))) {
     if (/\.(png|svg)$/.test(f)) { put('icons/' + f, fs.readFileSync(path.join(HUB, 'icons', f))); precache.push('icons/' + f); }
   }
   precache.unshift('./', 'index.html', 'manifest.webmanifest');
 
-  // 오프라인 : 판 번호가 바뀌면 기기에 담아 둔 것을 새로 받는다
+  // 판 번호 : 내용이 바뀌면 바뀐다. 기기에 담아 둔 것을 새로 받고, 앱처럼 띄운 허브는 version.json 과 견주어 새 판을 알린다
+  // (허브는 만든 시각이 들어가므로 빼고, 허브 틀 · 모양 · 동작은 넣어 견준다)
   const hash = crypto.createHash('sha256');
   for (const [rel, d] of [...outFiles].sort((a, b) => a[0].localeCompare(b[0]))) { hash.update(rel); hash.update(d); }
+  hash.update(hubFor('').replace(built, ''));
   const version = hash.digest('hex').slice(0, 12);
+  put('index.html', hubFor(version));
+  put('version.json', JSON.stringify({ v: version, built: built }));
   put('sw.js', fs.readFileSync(path.join(HUB, 'sw.js'), 'utf8')
     .split('@@VERSION@@').join(version)
     .split('@@FILES@@').join(JSON.stringify([...new Set(precache)], null, 1)));
