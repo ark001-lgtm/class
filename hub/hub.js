@@ -245,7 +245,7 @@ function themeLabel() { $('btn-theme').textContent = isDark() ? '밝은 화면' 
 $('btn-theme').addEventListener('click', function () {
   const t = isDark() ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', t);
-  store('hub-theme', t); themeLabel();
+  store('suup-theme', t); themeLabel();
 });
 if (window.matchMedia) {
   const mq = window.matchMedia('(prefers-color-scheme: dark)');
@@ -281,7 +281,8 @@ yearSel.addEventListener('change', function () { year = yearSel.value; pickDefau
 window.addEventListener('hashchange', function () { readHash(); pickDefault(); render(); });
 
 /* ── 시작 ── */
-const savedTheme = load('hub-theme');
+// 화면 밝기는 허브와 수업 화면(엔진)이 함께 쓴다
+const savedTheme = load('suup-theme');
 if (savedTheme === 'dark' || savedTheme === 'light') document.documentElement.setAttribute('data-theme', savedTheme);
 themeLabel(); syncFull();
 readHash(); pickDefault(); writeHash(); render();

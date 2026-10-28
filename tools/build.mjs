@@ -4,10 +4,11 @@
 //   node tools/build.mjs
 //
 // 소단원 폴더 lessons/<과목 id>/<소단원 id>/
-//   lesson.html    수업 화면 (있으면 '수업 가능')
+//   scenes.js      장면만 쓴 수업 화면 → engine/ 과 합쳐 HTML 하나가 된다 (있으면 '수업 가능')
+//   scenes.css     그 소단원에만 쓰는 모양 (없어도 됨)
+//   lesson.html    엔진을 떼어 내기 전에 만든 수업 화면 (2-3). 그대로 쓴다
 //   worksheet.pdf  학습지 (있으면 [학습지] 단추가 켜짐)
 //   memo.md        수업 메모 (맨 위 메모에 '다음에 바꿀 것'이 남아 있으면 '고칠 것 있음')
-// ②단계에서 공통 엔진을 떼어 내면, lesson.html 대신 장면 파일을 엔진과 합치는 길을 buildLesson 에 더한다.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -16,6 +17,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'dist');
 const HUB = path.join(ROOT, 'hub');
+const ENGINE = path.join(ROOT, 'engine');
 const ID_OK = /^[A-Za-z0-9._-]+$/;
 const STATUS_WORDS = { '준비 중': 'prep', '수업 가능': 'ready', '고칠 것 있음': 'fix', prep: 'prep', ready: 'ready', fix: 'fix' };
 
@@ -76,10 +78,26 @@ function withHubLink(html, hubHref) {
   return i < 0 ? html + tag : html.slice(0, i) + tag + html.slice(i);
 }
 
-function buildLesson(srcDir, outRel, hubHref) {
-  const f = path.join(srcDir, 'lesson.html');
-  if (!fs.existsSync(f)) return false;
-  put(path.join(outRel, 'index.html'), withHubLink(fs.readFileSync(f, 'utf8'), hubHref));
+function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+/** 장면 파일 + 엔진 → HTML 하나 (USB 로 들고 가도 열린다) */
+function engineHtml(srcDir, info) {
+  const rd = (f) => fs.readFileSync(f, 'utf8');
+  const cssFile = path.join(srcDir, 'scenes.css');
+  const script = ["'use strict';", 'const SUUP = ' + JSON.stringify(info).replace(/</g, '\\u003c') + ';',
+    rd(path.join(ENGINE, 'engine.js')), rd(path.join(srcDir, 'scenes.js')), rd(path.join(ENGINE, 'start.js'))].join('\n');
+  if (/<\/script/i.test(script)) fail(`${path.relative(ROOT, srcDir)} 의 장면 파일에 '</script' 글자가 있으면 안 됩니다.`);
+  return rd(path.join(ENGINE, 'stage.html'))
+    .split('@@TITLE@@').join(esc(info.title + ' 수업'))
+    .split('@@KICKER@@').join(esc(info.kicker))
+    .split('@@ENGINE_CSS@@').join(rd(path.join(ENGINE, 'engine.css')))
+    .split('@@LESSON_CSS@@').join(fs.existsSync(cssFile) ? rd(cssFile) : '')
+    .split('@@SCRIPT@@').join(script);
+}
+function buildLesson(srcDir, outRel, hubHref, info) {
+  const scenes = path.join(srcDir, 'scenes.js'), legacy = path.join(srcDir, 'lesson.html');
+  if (fs.existsSync(scenes)) put(path.join(outRel, 'index.html'), engineHtml(srcDir, Object.assign({ hub: hubHref }, info)));
+  else if (fs.existsSync(legacy)) put(path.join(outRel, 'index.html'), withHubLink(fs.readFileSync(legacy, 'utf8'), hubHref));
+  else return false;
   return true;
 }
 
@@ -104,7 +122,9 @@ function buildYear(catalog, srcBase, urlBase, hashPrefix) {
                 seen.add(key);
                 const src = path.join(srcBase, 'lessons', s.id, l.id);
                 const rel = urlBase + `lessons/${s.id}/${l.id}/`;
-                const hasScreen = buildLesson(src, rel, '../'.repeat(depth) + '#' + hashPrefix + s.id);
+                const kno = String(l.no || l.id).split('-').pop().padStart(2, '0');
+                const hasScreen = buildLesson(src, rel, '../'.repeat(depth) + '#' + hashPrefix + s.id,
+                  { id: s.id + '/' + l.id, title: l.title, kicker: kno + '. ' + l.title });
                 const pdf = path.join(src, 'worksheet.pdf');
                 const hasPdf = fs.existsSync(pdf);
                 if (hasPdf) put(rel + 'worksheet.pdf', fs.readFileSync(pdf));
@@ -114,7 +134,7 @@ function buildYear(catalog, srcBase, urlBase, hashPrefix) {
                 if (l.status) {
                   if (!STATUS_WORDS[l.status]) fail(`소단원 "${l.title}" 의 status "${l.status}" 는 준비 중 · 수업 가능 · 고칠 것 있음 가운데 하나로 써 주세요.`);
                   status = STATUS_WORDS[l.status];
-                  if (status !== 'prep' && !hasScreen) { warnings.push(`${s.name} ${l.id} : 수업 화면(lesson.html)이 없어서 '준비 중'으로 둡니다.`); status = 'prep'; }
+                  if (status !== 'prep' && !hasScreen) { warnings.push(`${s.name} ${l.id} : 수업 화면(scenes.js 나 lesson.html)이 없어서 '준비 중'으로 둡니다.`); status = 'prep'; }
                 }
                 const no = l.no || l.id;
                 return {
