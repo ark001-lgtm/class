@@ -1,0 +1,16 @@
+{
+  "name": "나의 수업",
+  "short_name": "나의 수업",
+  "description": "소단원마다 만든 전자칠판·아이패드 수업 화면 모음",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#E8EDF1",
+  "theme_color": "#E8EDF1",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

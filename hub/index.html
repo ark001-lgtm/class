@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>나의 수업</title>
+<meta name="description" content="소단원마다 만든 전자칠판·아이패드 수업 화면 모음">
+<meta name="theme-color" content="#E8EDF1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0D141B" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="나의 수업">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/*@@HUB_CSS@@*/
+</style>
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="./" aria-label="나의 수업 처음 화면">
+    <img src="icons/icon.svg" alt="" width="48" height="48">
+    <span class="brand-text"><b>나의 수업</b><small id="year-label"></small></span>
+  </a>
+  <label class="search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20.5 20.5"/></svg>
+    <input id="q" type="search" placeholder="소단원 찾기 (예: 열역학)" autocomplete="off" enterkeyhint="search" aria-label="소단원 찾기">
+  </label>
+  <div class="top-tools">
+    <select id="year" class="tbtn" aria-label="학년도 고르기" hidden></select>
+    <button id="btn-theme" class="tbtn" type="button">어두운 화면</button>
+    <button id="btn-full" class="tbtn icon" type="button" aria-label="전체 화면" title="전체 화면">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fs-in" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><path class="fs-out" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
+    </button>
+  </div>
+</header>
+<div class="body">
+  <nav class="side" id="side" aria-label="교과와 과목"></nav>
+  <main class="main" id="main" tabindex="-1"></main>
+</div>
+<dialog id="memo" aria-labelledby="memo-title">
+  <div class="memo-head">
+    <div><small id="memo-kicker"></small><h2 id="memo-title"></h2></div>
+    <button class="tbtn" type="button" id="memo-close">닫기</button>
+  </div>
+  <div class="memo-body" id="memo-body"></div>
+</dialog>
+<div id="toast" role="status" hidden></div>
+<script id="hub-data" type="application/json">@@HUB_DATA@@</script>
+<script>
+/*@@HUB_JS@@*/
+</script>
+</body>
+</html>
