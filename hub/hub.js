@@ -170,7 +170,7 @@ function card(l, s, where) {
     icon('note'), h('span', { text: '메모 ' + fmtDate(last.date) + (last.label ? ' · ' + last.label : '') })) : null;
   const acts = [];
   if (ready) acts.push(h('a', { class: 'btn primary start', href: l.href }, icon('play'), '수업 시작'));
-  if (l.worksheet) acts.push(h('button', { class: 'btn', type: 'button', title: '학습지 보기 · PDF 내려받기', onclick: function () { openSheet(l, s); } }, icon('doc'), '학습지'));
+  if (l.worksheet) acts.push(h('button', { class: 'btn', type: 'button', title: '학습지 보기', onclick: function () { openSheet(l, s); } }, icon('doc'), '학습지'));
   return h('article', { class: 'card' + (ready ? '' : ' prep') },
     h('div', { class: 'card-top' }, h('span', { class: 'no', text: l.no })),
     h('h3', { text: l.title }),
@@ -206,8 +206,8 @@ function closeMemo() { if (dlg.close) dlg.close(); else dlg.removeAttribute('ope
 $('memo-close').addEventListener('click', closeMemo);
 dlg.addEventListener('click', function (e) { if (e.target === dlg) closeMemo(); });
 
-/* ── 학습지 : 쪽마다 그려 보여 주고, PDF 로 내려받는다 ──
-   PDF 를 그리는 데 pdf.js 를 쓴다 (처음 열 때 한 번 받아 온다). 못 받으면 새 창에서 열기로 대신한다. */
+/* ── 학습지 : 쪽마다 그려 보여 주기만 한다 (파일 내려받기 없음) ──
+   PDF 를 그리는 데 pdf.js 를 쓴다 (처음 열 때 한 번 받아 오고, 그 뒤에는 기기에 담아 둔다). */
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
 let pdfLib = null;
 function loadPdfJs() {
@@ -231,14 +231,11 @@ function openSheet(l, s) {
   const job = ++sheetJob, body = $('sheet-body');
   $('sheet-kicker').textContent = s.name + ' · ' + l.no;
   $('sheet-title').textContent = l.title + ' 학습지';
-  const down = $('sheet-down');
-  down.href = l.worksheet; down.setAttribute('download', l.worksheetName);
   body.replaceChildren(h('p', { class: 'hint', text: '학습지를 불러오는 중…' }));
   if (sheet.showModal) sheet.showModal(); else sheet.setAttribute('open', '');
   const fallback = function () {
     if (job !== sheetJob) return;
-    body.replaceChildren(h('p', { class: 'empty' }, '미리 보기를 불러오지 못했습니다. 위의 [PDF 내려받기]를 누르거나 ',
-      h('a', { href: l.worksheet, target: '_blank', rel: 'noopener', text: '새 창에서 열어' }), ' 보세요.'));
+    body.replaceChildren(h('p', { class: 'empty', text: '학습지를 불러오지 못했습니다. 처음 한 번은 인터넷에 연결된 상태에서 열어 주세요.' }));
   };
   loadPdfJs().then(function (lib) { return lib.getDocument(l.worksheet).promise; }).then(function (pdf) {
     if (job !== sheetJob) return;

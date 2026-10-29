@@ -141,7 +141,6 @@ function buildYear(catalog, srcBase, urlBase, hashPrefix) {
                   id: l.id, no: no, title: l.title, status: status,
                   href: status === 'prep' ? null : rel,
                   worksheet: hasPdf ? rel + 'worksheet.pdf' : null,
-                  worksheetName: `${no} ${l.title} 학습지.pdf`.replace(/[\\/:*?"<>|]/g, ' '),
                   memo: memo,
                 };
               }),
