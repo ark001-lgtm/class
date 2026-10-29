@@ -84,7 +84,7 @@ function engineHtml(srcDir, info) {
   const rd = (f) => fs.readFileSync(f, 'utf8');
   const cssFile = path.join(srcDir, 'scenes.css');
   const script = ["'use strict';", 'const SUUP = ' + JSON.stringify(info).replace(/</g, '\\u003c') + ';',
-    rd(path.join(ENGINE, 'engine.js')), rd(path.join(srcDir, 'scenes.js')), rd(path.join(ENGINE, 'start.js'))].join('\n');
+    rd(path.join(ENGINE, 'engine.js')), rd(path.join(ENGINE, 'kit.js')), rd(path.join(srcDir, 'scenes.js')), rd(path.join(ENGINE, 'start.js'))].join('\n');
   if (/<\/script/i.test(script)) fail(`${path.relative(ROOT, srcDir)} 의 장면 파일에 '</script' 글자가 있으면 안 됩니다.`);
   return rd(path.join(ENGINE, 'stage.html'))
     .split('@@TITLE@@').join(esc(info.title + ' 수업'))

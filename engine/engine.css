@@ -259,3 +259,24 @@ input[type=range].big::-moz-range-thumb { width: 40px; height: 40px; border-radi
 .answer.right { background: var(--good); border-color: var(--good); color: var(--panel); }
 .answer.wrong { border-color: var(--pen); color: var(--pen); }
 .reveal { font-size: 30px; line-height: 1.6; }
+
+/* ── 학습지 부품 (kit.js) ── */
+.frac { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.15; margin: 0 .12em; font-size: .92em; }
+.frac > span { padding: 0 .22em; }
+.frac > .fn { border-bottom: 3px solid currentColor; }
+.kit-steps { display: grid; gap: 12px; }
+.kit-steps .step { padding: 8px 14px; gap: 1px; }
+.kit-steps .s-no { font-size: 22px; }
+.kit-steps .s-what { font-size: 22px; line-height: 1.38; }
+.kit-steps .s-eq { font-size: 26px; line-height: 1.42; }
+.kit-steps .s-note { font-size: 19px; line-height: 1.36; }
+.kit-means { font-size: 28px; line-height: 1.55; border-left-color: var(--energy); }
+.kv { display: grid; grid-template-columns: 112px 1fr; gap: 10px; align-items: baseline; font-size: 25px; line-height: 1.45; }
+.kv > b { font-size: 21px; color: var(--muted); font-weight: 600; }
+.cards3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.card3 { display: flex; flex-direction: column; min-width: 0; padding: 0; overflow: hidden; }
+.card3 canvas { margin: 0 auto; }
+.card3 .c-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 22px 4px; }
+.card3 .c-title b { font-size: 30px; }
+.card3 .c-body { display: flex; flex-direction: column; gap: 10px; padding: 8px 22px 18px; }
+.t1 td .blank, .t1 td .frac { font-size: inherit; }
