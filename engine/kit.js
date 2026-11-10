@@ -103,11 +103,14 @@ const KIT = (function () {
         K.cap('공식 유도 ─ ' + d.title), d.intro ? K.p(d.intro, 'ws sm', 'font-size:26px') : null, st.el, d.after || null, st.buttons)));
     return st;
   };
-  /** 주의 : 틀린 생각 → 왜 틀렸나 → 올바른 이해. 카드가 둘이면 탭. visual = { w, h, draw(c, which, dt, now), ctrl(which) } */
-  K.mis = function (root, cards, visual) {
+  /** 주의 : 틀린 생각 → 왜 틀렸나 → 올바른 이해. 카드가 둘이면 탭. visual = { w, h, draw(c, which, dt, now), ctrl(which) }
+      카드에 fix 가 있으면 '오해 → 바로잡기' 두 줄. o = { label: '오해', start: 2 } 로 탭 이름과 번호를 학습지에 맞춘다. */
+  K.mis = function (root, cards, visual, o) {
+    o = o || {};
+    const label = o.label || '주의', no = function (i) { return label + ' ' + (i + (o.start || 1)); };
     let which = 0;
     const cv = visual ? makeCanvas(visual.w, visual.h) : null;
-    const tabs = cards.length > 1 ? K.tabs(cards.map(function (c, i) { return '주의 ' + (i + 1) + ' · ' + c.short; }), function (i) { which = i; render(); }) : null;
+    const tabs = cards.length > 1 ? K.tabs(cards.map(function (c, i) { return no(i) + ' · ' + c.short; }), function (i) { which = i; render(); }) : null;
     const textBox = h('div', { class: 'col', style: 'gap:0' });
     const ctrl = h('div', { class: 'ctrl', style: 'padding:6px 22px 16px;gap:12px;flex-wrap:wrap' });
     const lines = [];
@@ -115,8 +118,8 @@ const KIT = (function () {
       if (tabs) K.select(tabs, which);
       const cd = cards[which];
       textBox.replaceChildren(); lines.length = 0;
-      textBox.append(K.cap(cards.length > 1 ? '주의 ' + (which + 1) : '주의'), h('p', { class: 'big-q', style: 'font-size:44px;margin:6px 0 16px', text: cd.q }));
-      [['틀린 생각', cd.wrong], ['왜 틀렸나', cd.why], ['올바른 이해', cd.right]].forEach(function (pair, i) {
+      textBox.append(K.cap(cards.length > 1 || o.start ? no(which) : label), h('p', { class: 'big-q', style: 'font-size:44px;margin:6px 0 16px', text: cd.q }));
+      (cd.fix ? [['오해', cd.wrong], ['바로잡기', cd.fix]] : [['틀린 생각', cd.wrong], ['왜 틀렸나', cd.why], ['올바른 이해', cd.right]]).forEach(function (pair, i) {
         const line = h('div', { class: 'mis-line' + (i === 0 ? ' on' : '') }, h('b', { text: pair[0] }), h('span', { class: 'body' }, K.t(pair[1])));
         lines.push(line); textBox.append(line);
       });
@@ -139,7 +142,44 @@ const KIT = (function () {
     };
   };
 
+  /** 스스로 점검하기 : 질문마다 [예시 답] 단추. items = [{ q, a }] */
+  K.check = function (root, items, o) {
+    o = o || {};
+    const answers = [];
+    const list = items.map(function (it) {
+      const ans = h('div', { class: 'callout good', style: 'font-size:28px;margin-top:10px', hidden: true }, h('b', { text: '예시 답 　' }), K.t(it.a));
+      answers.push(ans);
+      return h('div', { style: 'padding:12px 0;border-top:2px solid var(--line)' },
+        h('div', { class: 'row', style: 'gap:18px;align-items:center;justify-content:space-between' },
+          h('p', { class: 'ws', style: 'margin:0' }, K.t('• ' + it.q)),
+          K.btn('예시 답', function () { ans.hidden = !ans.hidden; })),
+        ans);
+    });
+    root.append(h('section', { class: 'panel col pad', style: 'height:100%;gap:6px;min-height:0' },
+      K.cap(o.title || '스스로 점검하기'),
+      h('p', { class: 'ws sm', style: 'margin:0 0 6px;color:var(--muted)', text: o.lead || '아래 질문에 막힘없이 답할 수 있으면 이 차시는 소화한 것입니다.' }),
+      list,
+      h('div', { class: 'row', style: 'gap:12px;margin-top:auto' },
+        K.btn('예시 답 모두 보기', function () { answers.forEach(function (a) { a.hidden = false; }); }),
+        K.btn('모두 가리기', function () { answers.forEach(function (a) { a.hidden = true; }); }))));
+  };
+
   /* ── 그리기 ── */
+  /** 빛의 파장(nm) → 색. 380 nm 보다 짧으면 자외선, 750 nm 보다 길면 적외선이라 회색에 가깝게 */
+  K.nm = function (nm, a) {
+    let r = 0, g = 0, b = 0;
+    if (nm < 380) { r = 0.55; g = 0.35; b = 0.85; }
+    else if (nm < 440) { r = (440 - nm) / 60; b = 1; }
+    else if (nm < 490) { g = (nm - 440) / 50; b = 1; }
+    else if (nm < 510) { g = 1; b = (510 - nm) / 20; }
+    else if (nm < 580) { r = (nm - 510) / 70; g = 1; }
+    else if (nm < 645) { r = 1; g = (645 - nm) / 65; }
+    else if (nm <= 750) { r = 1; }
+    else { r = 0.6; g = 0.25; b = 0.25; }
+    const f = nm < 380 || nm > 750 ? 1 : nm < 420 ? 0.4 + 0.6 * (nm - 380) / 40 : nm > 700 ? 0.4 + 0.6 * (750 - nm) / 50 : 1;
+    const c = function (v) { return Math.round(255 * Math.pow(v * f, 0.8)); };
+    return 'rgba(' + c(r) + ',' + c(g) + ',' + c(b) + ',' + (a === undefined ? 1 : a) + ')';
+  };
   K.dash = function (c, x1, y1, x2, y2, color, w, pat) {
     c.strokeStyle = color || COL.line; c.lineWidth = w || 3; c.setLineDash(pat || [12, 10]);
     c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke(); c.setLineDash([]);
