@@ -9,6 +9,10 @@
 //   lesson.html    엔진을 떼어 내기 전에 만든 수업 화면 (2-3). 그대로 쓴다
 //   worksheet.pdf  학습지 (있으면 [학습지] 단추가 켜짐)
 //   memo.md        수업 메모 (맨 위 메모에 '다음에 바꿀 것'이 남아 있으면 '고칠 것 있음')
+//
+// 시뮬레이션 sim/  (「평택여고 과학 실험실」 키트에서 가져온 것. 그대로 dist/sim/ 에 놓는다)
+//   catalog.json 의 소단원에 "sims": ["m/plane/sim.html#proj"] 처럼 짝을 적으면
+//   허브 줄 · 수업 화면 머리줄에 [시뮬레이션] 단추가 생기고, 시뮬레이션 화면에는 [수업 화면] 단추가 생긴다.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -18,6 +22,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(ROOT, 'dist');
 const HUB = path.join(ROOT, 'hub');
 const ENGINE = path.join(ROOT, 'engine');
+const SIM = path.join(ROOT, 'sim');
 const ID_OK = /^[A-Za-z0-9._-]+$/;
 const STATUS_WORDS = { '준비 중': 'prep', '수업 가능': 'ready', '고칠 것 있음': 'fix', prep: 'prep', ready: 'ready', fix: 'fix' };
 
@@ -78,6 +83,45 @@ function withHubLink(html, hubHref) {
   return i < 0 ? html + tag : html.slice(0, i) + tag + html.slice(i);
 }
 
+/** "m/plane/sim.html#proj" → { page, label } : 이름은 시뮬레이션 화면의 실험(모드) 단추 글자에서 읽는다 */
+const simHtml = new Map();
+const simLinks = [];   // 시뮬레이션 화면에 넣을 짝 목록 (올해 것만)
+function simInfo(spec, where) {
+  const [page, mode] = String(spec).split('#');
+  if (!/^[a-z0-9/_-]+\.html$/.test(page)) fail(`${where} : 시뮬레이션 주소 "${spec}" 를 sim/ 안의 파일로 적어 주세요 (예: m/plane/sim.html#proj).`);
+  const f = path.join(SIM, page);
+  if (!fs.existsSync(f)) fail(`${where} : 시뮬레이션 파일 sim/${page} 이 없습니다.`);
+  if (!simHtml.has(page)) simHtml.set(page, fs.readFileSync(f, 'utf8'));
+  const html = simHtml.get(page);
+  let label;
+  if (mode) {
+    const m = new RegExp('data-mode="' + mode + '"[^>]*>([^<]*)<').exec(html);
+    if (!m) fail(`${where} : sim/${page} 에 #${mode} 실험이 없습니다.`);
+    label = m[1].replace(/^\d+\.\s*/, '').trim();
+  } else {
+    const m = /<h1[^>]*>([^<]*)<\/h1>/.exec(html);
+    label = m ? m[1].trim() : page;
+  }
+  return { spec: page + (mode ? '#' + mode : ''), label: label };
+}
+/** sim/ 을 그대로 dist/sim/ 에. catalog.js 에는 짝 목록을 채워 넣는다 */
+function copySims() {
+  if (!fs.existsSync(SIM)) return;
+  const walk = function (dir) {
+    for (const name of fs.readdirSync(dir)) {
+      const f = path.join(dir, name), rel = path.relative(SIM, f).split(path.sep).join('/');
+      if (fs.statSync(f).isDirectory()) { walk(f); continue; }
+      let data = fs.readFileSync(f);
+      if (rel === 'assets/catalog.js') {
+        const links = { hub: '../index.html', lessons: simLinks };
+        data = data.toString('utf8').replace(/\/\*@@SUUP_LINKS@@\*\/\{[^;]*\}/, JSON.stringify(links).replace(/</g, '\\u003c'));
+      }
+      put('sim/' + rel, data);
+    }
+  };
+  walk(SIM);
+}
+
 function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 /** 장면 파일 + 엔진 → HTML 하나 (USB 로 들고 가도 열린다) */
 function engineHtml(srcDir, info) {
@@ -111,7 +155,7 @@ function buildYear(catalog, srcBase, urlBase, hashPrefix) {
       subjects: (g.subjects || []).map(function (s) {
         if (!ID_OK.test(s.id || '')) fail(`과목 "${s.name}" 의 id "${s.id}" 는 영문·숫자·-·_ 로만 써 주세요.`);
         return {
-          id: s.id, name: s.name, note: s.note || '',
+          id: s.id, name: s.name, short: s.short || '', note: s.note || '',
           units: (s.units || []).map(function (u) {
             return {
               name: u.name,
@@ -123,8 +167,11 @@ function buildYear(catalog, srcBase, urlBase, hashPrefix) {
                 const src = path.join(srcBase, 'lessons', s.id, l.id);
                 const rel = urlBase + `lessons/${s.id}/${l.id}/`;
                 const kno = String(l.no || l.id).split('-').pop().padStart(2, '0');
+                const sims = (l.sims || []).map(function (x) { return simInfo(x, `${s.name} ${l.id}`); });
                 const hasScreen = buildLesson(src, rel, '../'.repeat(depth) + '#' + hashPrefix + s.id,
-                  { id: s.id + '/' + l.id, title: l.title, kicker: kno + '. ' + l.title });
+                  { id: s.id + '/' + l.id, title: l.title, kicker: kno + '. ' + l.title,
+                    sims: sims.map(function (x) { return { href: '../'.repeat(depth) + 'sim/' + x.spec, label: x.label }; }) });
+                if (hasScreen && sims.length && !urlBase) simLinks.push({ subject: { id: s.id, name: s.name }, id: l.no || l.id, title: l.title, href: '../' + rel, sims: sims.map(function (x) { return x.spec; }) });
                 const pdf = path.join(src, 'worksheet.pdf');
                 const hasPdf = fs.existsSync(pdf);
                 if (hasPdf) put(rel + 'worksheet.pdf', fs.readFileSync(pdf));
@@ -141,6 +188,7 @@ function buildYear(catalog, srcBase, urlBase, hashPrefix) {
                   id: l.id, no: no, title: l.title, status: status,
                   href: status === 'prep' ? null : rel,
                   worksheet: hasPdf ? rel + 'worksheet.pdf' : null,
+                  sims: sims.map(function (x) { return { href: 'sim/' + x.spec, label: x.label }; }),
                   memo: memo,
                 };
               }),
@@ -174,6 +222,8 @@ function main() {
   years[current] = buildYear(catalog, ROOT, '', '');
   const precache = [];
   for (const [rel] of outFiles) precache.push(rel.endsWith('/index.html') ? rel.slice(0, -'index.html'.length) : rel, rel);
+  // 시뮬레이션은 미리 담아 두지 않는다 (한 번 열면 그때 담긴다). 판 번호에는 들어간다
+  copySims();
 
   // 지난 학년도 보관본 : archive/<학년도>/catalog.json + lessons/
   const arch = path.join(ROOT, 'archive');

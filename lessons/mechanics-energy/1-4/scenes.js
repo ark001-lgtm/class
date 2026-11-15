@@ -5,7 +5,7 @@ const P1 = '1 케플러 법칙과 만유인력', P2 = '2 케플러 제3법칙의
 const SCENE_LIST = [
   { id: 'kepler', part: P1, title: '케플러 법칙', ws: '학습지 1-(1) [표 1] ①②', make: sceneKepler },
   { id: 'gravity', part: P1, title: '만유인력', ws: '학습지 1-(2) ③④', make: sceneGravity },
-  { id: 'k', part: P2, title: '비례상수 k 는 무엇으로 정해지는가', ws: '학습지 2-(1) ⑤~⑧', make: sceneK },
+  { id: 'k', part: P2, title: 'k 는 무엇으로 정해질까', ws: '학습지 2-(1) ⑤~⑧', make: sceneK },
   { id: 'sat', part: P2, title: '인공위성의 속력', ws: '학습지 2-(2) ⑨⑩', make: sceneSat },
   { id: 'mis', part: P2, title: '주의', ws: '주의 1 · 2', make: sceneMis },
   { id: 'ex', part: '3 예제', title: '예제', ws: '학습지 3 예제 ⑪⑫', make: sceneEx },

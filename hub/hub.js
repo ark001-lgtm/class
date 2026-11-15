@@ -1,10 +1,11 @@
 'use strict';
 /* 나의 수업 : 허브(수업 첫 화면)
-   교과 → 과목 → 단원 → 소단원. 목록은 tools/build.mjs 가 catalog.json 과 lessons/ 폴더를 읽어 이 파일 아래에 넣어 준다.
+   과목 → 단원 카드 → 소단원 줄([수업 화면] [시뮬레이션] [메모]). 모양은 「평택여고 과학 실험실」 첫 화면을 본떴다.
+   목록은 tools/build.mjs 가 catalog.json 과 lessons/ 폴더를 읽어 이 파일 아래에 넣어 준다.
    로그인·저장 없음. 이 기기에서 마지막으로 본 과목과 화면 밝기만 브라우저에 기억한다. */
 const DATA = JSON.parse(document.getElementById('hub-data').textContent);
 const $ = function (id) { return document.getElementById(id); };
-const side = $('side'), main = $('main'), qInput = $('q'), yearSel = $('year'), dlg = $('memo'), sheet = $('sheet');
+const subjBar = $('subjects'), unitsBox = $('units'), qInput = $('q'), yearSel = $('year'), dlg = $('memo'), sheet = $('sheet');
 let year = DATA.current, subjId = null, query = '', offlineReady = false;
 
 /* 작은 도구 */
@@ -28,6 +29,7 @@ function add(e, c) {
 }
 const ICONS = {
   play: '<path d="M8 5.2v13.6L19 12z" fill="currentColor" stroke="none"/>',
+  sim: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/>',
   doc: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
   note: '<path d="M5 4h14v11l-5 5H5z"/><path d="M14 20v-5h5M9 9h6M9 13h3"/>',
 };
@@ -91,15 +93,14 @@ function choose(id) {
   subjId = id; query = ''; qInput.value = '';
   store('hub-subject', id);
   writeHash(); render();
-  main.scrollTop = 0;
-  const cur = side.querySelector('[aria-current="true"]');
-  if (cur && cur.scrollIntoView) cur.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 
 /* ── 그리기 ── */
 function render() {
   $('year-label').textContent = year + '학년도' + (year !== DATA.current ? ' · 보관본' : '');
-  renderYears(); renderSide(); renderMain();
+  $('curr').textContent = year + '학년도 ' + subjects().map(function (s) { return s.name; }).join(' · ') +
+    '. 소단원마다 전자칠판·아이패드 수업 화면이 있고, 시뮬레이션으로 직접 실험해 볼 수 있어요.';
+  renderYears(); renderSubjects(); renderMain();
 }
 function renderYears() {
   const ys = Object.keys(DATA.years).sort().reverse();
@@ -110,78 +111,98 @@ function renderYears() {
   }));
   yearSel.value = year;
 }
-function renderSide() {
-  side.replaceChildren.apply(side, yearData().groups.map(function (g) {
-    return h('div', { class: 'group' },
-      h('div', { class: 'group-name', text: g.name }),
-      g.subjects.map(function (s) {
-        return h('button', { class: 'subj', type: 'button', 'aria-current': String(!query && s.id === subjId), onclick: function () { choose(s.id); } },
-          h('span', { text: s.name }));
-      }));
-  }));
+function renderSubjects() {
+  const out = [];
+  yearData().groups.forEach(function (g) {
+    out.push(h('span', { class: 'lvl', text: g.name }));
+    g.subjects.forEach(function (s) {
+      out.push(h('button', { type: 'button', 'aria-pressed': String(!query.trim() && s.id === subjId), onclick: function () { choose(s.id); } }, s.name));
+    });
+  });
+  subjBar.replaceChildren.apply(subjBar, out);
 }
 function renderMain() {
-  const out = [];
+  const notice = $('notice');
+  notice.replaceChildren();
   if (year !== DATA.current) {
-    out.push(h('div', { class: 'banner' },
+    add(notice, h('div', { class: 'banner' },
       h('span', { text: year + '학년도 보관본입니다. 수업 화면도 그해 모습 그대로 열립니다.' }),
       h('button', { class: 'btn', type: 'button', text: DATA.current + '학년도로 돌아가기', onclick: function () { year = DATA.current; pickDefault(); writeHash(); render(); } })));
   }
-  if (query.trim()) out.push.apply(out, searchView());
-  else out.push.apply(out, subjectView());
-  out.push(foot());
-  main.replaceChildren();
-  add(main, out);
+  const view = query.trim() ? searchView() : subjectView();
+  $('status').textContent = view.status;
+  unitsBox.replaceChildren();
+  add(unitsBox, view.cards);
+  renderFoot();
+}
+/** 'Ⅱ. 열과 에너지' → { mark: 'Ⅱ', name: '열과 에너지' } */
+function unitParts(u) {
+  const m = /^\s*([ⅠⅡⅢⅣⅤⅥⅦⅧⅨⅩ]+|\d+)\s*[.·]\s*(.+)$/.exec(u.name);
+  return m ? { mark: m[1], name: m[2] } : { mark: '', name: u.name };
+}
+function counts(lessons) {
+  const ready = lessons.filter(function (l) { return l.status !== 'prep'; }).length;
+  const sims = lessons.filter(function (l) { return l.sims && l.sims.length; }).length;
+  return '소단원 ' + lessons.length + (ready ? ' · 수업 화면 ' + ready : '') + (sims ? ' · 시뮬레이션 ' + sims : '');
 }
 function subjectView() {
   const s = findSubj(subjId);
-  if (!s) return [h('p', { class: 'empty', text: '왼쪽에서 과목을 고르세요.' })];
-  return [
-    h('div', { class: 'subj-head' }, h('h1', { text: s.name }), s.note ? h('p', { class: 'note', text: s.note }) : null),
-    s.units.map(function (u) {
-      return h('section', { class: 'unit' },
-        h('div', { class: 'unit-head' }, h('h2', { text: u.name })),
-        h('div', { class: 'cards' }, u.lessons.map(function (l) { return card(l, s); })));
-    }),
-  ];
+  if (!s) return { status: '', cards: [h('p', { class: 'empty', text: '위에서 과목을 고르세요.' })] };
+  const all = s.units.flatMap(function (u) { return u.lessons; });
+  return {
+    status: [s.name, s.note, counts(all)].filter(Boolean).join(' · '),
+    cards: s.units.map(function (u, i) { return unitCard(s, u, i, u.lessons); }),
+  };
 }
 function norm(s) { return String(s).toLowerCase().replace(/\s+/g, ''); }
 function searchView() {
   const q = norm(query);
-  const bySubj = [];
+  const cards = [];
   let n = 0;
   subjects().forEach(function (s) {
-    const hits = [];
-    s.units.forEach(function (u) {
-      u.lessons.forEach(function (l) {
-        if (norm([s.name, u.name, l.no, l.title].join(' ')).indexOf(q) >= 0) hits.push(card(l, s, u.name));
+    s.units.forEach(function (u, i) {
+      const hits = u.lessons.filter(function (l) {
+        return norm([s.name, u.name, l.no, l.title].concat((l.sims || []).map(function (x) { return x.label; })).join(' ')).indexOf(q) >= 0;
       });
+      if (hits.length) { n += hits.length; cards.push(unitCard(s, u, i, hits, true)); }
     });
-    if (hits.length) { n += hits.length; bySubj.push(h('section', { class: 'unit' }, h('div', { class: 'unit-head' }, h('h2', { text: s.name }), h('small', { text: hits.length + '개' })), h('div', { class: 'cards' }, hits))); }
   });
-  const head = h('h1', { class: 'found-head', text: '‘' + query.trim() + '’ 찾은 소단원 ' + n + '개' });
-  return n ? [head, bySubj] : [head, h('p', { class: 'empty', text: '맞는 소단원이 없습니다. 다른 낱말로 찾아 보세요.' })];
+  if (!n) {
+    cards.push(h('div', { class: 'empty' }, '‘' + query.trim() + '’에 맞는 소단원이 없어요. 다른 낱말로 찾아보세요.', h('br'),
+      h('button', { class: 'btn', type: 'button', text: '검색 지우기', onclick: function () { qInput.value = ''; query = ''; renderSubjects(); renderMain(); } })));
+  }
+  return { status: '‘' + query.trim() + '’ 찾은 소단원 ' + n + '개', cards: cards };
 }
-function card(l, s, where) {
-  const ready = l.status !== 'prep';
-  const last = l.memo[0];
-  // 메모 줄을 누르면 수업 메모 창이 열린다
-  const meta = last ? h('button', { class: 'meta', type: 'button', title: '수업 메모 보기', onclick: function () { openMemo(l, s); } },
-    icon('note'), h('span', { text: '메모 ' + fmtDate(last.date) + (last.label ? ' · ' + last.label : '') })) : null;
+/** 단원 카드 : 번호 칸 + 이름 + 소단원 줄 */
+function unitCard(s, u, i, lessons, found) {
+  const p = unitParts(u);
+  return h('article', { class: 'unit' },
+    h('header', { class: 'unit-head' },
+      h('div', { class: 'tile' }, h('span', { class: 'no', text: String(i + 1).padStart(2, '0') }), h('span', { class: 'cd', text: (s.short || s.name) + (p.mark ? ' ' + p.mark : '') })),
+      h('div', null, h('h3', { text: p.name }), h('p', { class: 'cnt', text: found ? s.name + ' · ' + counts(lessons) : counts(lessons) }))),
+    h('ol', { class: 'lessons' }, lessons.map(function (l) { return row(l, s); })));
+}
+/** 소단원 한 줄 : [수업 화면] [시뮬레이션] [학습지] [메모] */
+function row(l, s) {
+  const ready = l.status !== 'prep', sims = l.sims || [], last = l.memo[0];
   const acts = [];
-  if (ready) acts.push(h('a', { class: 'btn primary start', href: l.href }, icon('play'), '수업 시작'));
-  if (l.worksheet) acts.push(h('button', { class: 'btn', type: 'button', title: '학습지 보기', onclick: function () { openSheet(l, s); } }, icon('doc'), '학습지'));
-  return h('article', { class: 'card' + (ready ? '' : ' prep') },
-    h('div', { class: 'card-top' }, h('span', { class: 'no', text: l.no })),
-    h('h3', { text: l.title }),
-    where ? h('p', { class: 'where', text: where }) : null,
-    meta,
-    acts.length ? h('div', { class: 'actions' }, acts) : null);
+  if (ready) acts.push(h('a', { class: 'act go', href: l.href }, icon('play'), '수업 화면'));
+  sims.forEach(function (x) {
+    acts.push(h('a', { class: 'act sim', href: x.href, title: x.label + ' 시뮬레이션' }, icon('sim'), sims.length > 1 ? x.label : '시뮬레이션'));
+  });
+  if (l.worksheet) acts.push(h('button', { class: 'act', type: 'button', title: '학습지 보기', onclick: function () { openSheet(l, s); } }, icon('doc'), '학습지'));
+  if (last) acts.push(h('button', { class: 'act memo' + (last.next.length ? ' todo' : ''), type: 'button', title: '수업 메모 · ' + fmtDate(last.date) + (last.label ? ' ' + last.label : ''), onclick: function () { openMemo(l, s); } }, icon('note'), '메모'));
+  return h('li', { class: ready ? null : 'prep' },
+    h('span', { class: 'ln', text: l.no }),
+    ready ? h('a', { class: 'lt', href: l.href, text: l.title }) : h('span', { class: 'lt', text: l.title }),
+    acts.length ? h('span', { class: 'acts' }, acts) : null);
 }
-function foot() {
-  return h('footer', { class: 'foot' },
+function renderFoot() {
+  const f = $('foot');
+  f.replaceChildren(
     h('p', null, h('b', { text: '전자칠판' }), ' : 키보드 F11 로 브라우저를 전체 화면으로 두면 수업 화면을 열고 닫아도 그대로입니다.'),
-    h('p', null, h('b', { text: '아이패드' }), ' : 사파리 [공유] → [홈 화면에 추가] 하면 앱처럼 열립니다.'),
+    h('p', null, h('b', { text: '아이패드 · 휴대폰' }), ' : 사파리 [공유] → [홈 화면에 추가], 크롬 ⋮ → [홈 화면에 추가] 하면 앱처럼 열립니다.'),
+    h('p', null, h('b', { text: '시뮬레이션' }), ' : 「평택여고 과학 실험실」 키트에서 가져와 고쳐 썼습니다.'),
     h('p', { id: 'offline' }, offlineText()),
     h('p', { text: '목록을 만든 때 ' + DATA.built }));
 }
@@ -308,12 +329,12 @@ fullBtn.addEventListener('click', function () {
 ['fullscreenchange', 'webkitfullscreenchange'].forEach(function (t) { document.addEventListener(t, syncFull); });
 
 /* ── 찾기 · 학년도 · 주소 ── */
-qInput.addEventListener('input', function () { query = qInput.value; renderSide(); renderMain(); main.scrollTop = 0; });
-qInput.addEventListener('keydown', function (e) { if (e.key === 'Escape') { qInput.value = ''; query = ''; renderSide(); renderMain(); } });
+qInput.addEventListener('input', function () { query = qInput.value; renderSubjects(); renderMain(); });
+qInput.addEventListener('keydown', function (e) { if (e.key === 'Escape') { qInput.value = ''; query = ''; renderSubjects(); renderMain(); } });
 document.addEventListener('keydown', function (e) {
   if (e.key === '/' && document.activeElement !== qInput && !dlg.open && !sheet.open) { e.preventDefault(); qInput.focus(); }
 });
-yearSel.addEventListener('change', function () { year = yearSel.value; pickDefault(); writeHash(); render(); main.scrollTop = 0; });
+yearSel.addEventListener('change', function () { year = yearSel.value; pickDefault(); writeHash(); render(); });
 window.addEventListener('hashchange', function () { readHash(); pickDefault(); render(); });
 
 /* ── 시작 ── */

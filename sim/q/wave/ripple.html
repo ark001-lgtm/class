@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>파동 간섭 실험실 · 역학과 에너지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<script src="../../assets/catalog.js"></script>
+<script src="../../assets/simkit.js"></script>
+<script src="../../assets/lessonbar.js" defer></script>
+<script src="../../assets/simguide.js" defer></script><script src="../../assets/simrecord.js" defer></script><script src="../../assets/simfull.js" defer></script><script src="../../assets/simtools.js" defer></script>
+<style>.tbl-wrap td,.tbl-wrap th{white-space:normal;font-family:inherit}.guide{margin:0 0 10px;padding:0 0 0 18px;font-size:14px;line-height:1.6}.guide li{margin:2px 0}</style>
+</head>
+<body data-root="../../" class="area-phy">
+<div class="wrap">
+  <nav class="topbar" data-topbar="역학과 에너지|파동 간섭 실험실"></nav>
+  <header class="page">
+    <div>
+      <div class="eyebrow"><i class="area-dot"></i>역학과 에너지 · 소리의 간섭 <span class="code">12역학03-04</span></div>
+      <h1>파동 간섭 실험실</h1>
+    </div>
+    <div class="seg" role="group" aria-label="파동의 종류">
+      <button type="button" data-kind="water" aria-pressed="true">물결파</button>
+      <button type="button" data-kind="sound" aria-pressed="false">소리</button>
+      <button type="button" data-kind="light" aria-pressed="false">빛</button>
+    </div>
+  </header>
+
+  <div class="main">
+    <section class="panel scene" aria-label="물결통">
+      <div class="canvas-box"><canvas id="scene" aria-label="위에서 본 물결통: 파원과 장벽을 끌어 옮긴다"></canvas></div>
+      <div class="controls">
+        <button class="btn primary" id="play" type="button">⏸ 정지</button>
+        <div class="field">장벽 <div class="seg" id="barSeg"><button type="button" data-bar="none">없음 (파원 2개)</button><button type="button" data-bar="one">슬릿 1개</button><button type="button" data-bar="two">슬릿 2개</button></div></div>
+        <label class="field" for="lam">파장 <input type="range" id="lam" min="10" max="26" step="1" value="16"><output id="lamOut"></output></label>
+        <label class="field" for="dd" id="ddF">파원·슬릿 사이 거리 <input type="range" id="dd" min="20" max="80" step="2" value="56"><output id="ddOut"></output></label>
+        <label class="field" for="ww" id="wwF">슬릿 폭 <input type="range" id="ww" min="4" max="30" step="2" value="6"><output id="wwOut"></output></label>
+        <button class="btn" type="button" id="calm">물결 지우기</button>
+      </div>
+    </section>
+    <aside class="panel ledger" aria-label="측정과 설명">
+      <div class="stats" id="stats"></div>
+      <ol class="guide">
+        <li>파원(빨간 점)이나 장벽을 끌어 옮겨 보세요.</li>
+        <li>물결통 아무 곳이나 누르면 그 점까지 두 파원(또는 두 슬릿)에서의 거리 차, 즉 <b>경로차</b>가 나와요.</li>
+        <li>오른쪽 스크린의 밝기(세기)와 아래 그래프에서 밝은 곳·어두운 곳의 간격을 재 보세요. 자(도구)로 재도 돼요.</li>
+      </ol>
+      <p class="explain" id="explain"></p>
+    </aside>
+  </div>
+
+  <div class="lower">
+    <section class="panel">
+      <h2>스크린에 도달한 세기</h2><p class="sub">오른쪽 끝 스크린의 위치별 평균 세기(진폭의 제곱)</p>
+      <div class="graph-box" style="margin-top:8px"><canvas id="graph" aria-label="스크린 위치에 따른 세기 그래프"></canvas></div>
+    </section>
+    <section class="panel">
+      <h2>정리</h2>
+      <div class="tbl-wrap"><table class="data"><thead><tr><th>경로차</th><th>두 파동</th><th>결과</th></tr></thead><tbody>
+        <tr><td>0, 1λ, 2λ, …</td><td>마루와 마루가 만남(같은 위상)</td><td>보강 간섭 — 진폭이 커짐, 밝은 무늬·큰 소리</td></tr>
+        <tr><td>½λ, 1½λ, …</td><td>마루와 골이 만남(반대 위상)</td><td>상쇄 간섭 — 진폭이 작아짐, 어두운 무늬·작은 소리</td></tr>
+        <tr><td>슬릿 폭이 파장과 비슷</td><td>슬릿을 지나며 넓게 퍼짐</td><td>회절 — 틈이 좁을수록, 파장이 길수록 더 많이 퍼짐(정성적)</td></tr>
+      </tbody></table></div>
+    </section>
+  </div>
+  <footer class="site" data-footer data-extra="격자 위에서 파동 방정식을 직접 풀어 그린 모형입니다(가장자리는 파동을 흡수). 물결파 1칸 ≈ 0.5 cm로 나타냈습니다. 회절과 분해능은 정성적으로만 다룹니다([12전자02-01] 해설)."></footer>
+</div>
+
+<script>
+(() => {
+const {C, $, label} = Kit, TAU = Math.PI * 2;
+const S = Kit.canvas($('scene')), Gr = Kit.canvas($('graph'));
+// 격자: NX × NY 칸, 파동 방정식 u'' = c²∇²u (c² = 0.25 칸²/걸음 — 2차원 안정 조건 0.5 이하), 가장자리 흡수층
+const NX = 220, NY = 151, SP = 24, N = NX * NY, c2 = .25;
+let u = new Float32Array(N), v = new Float32Array(N), un = new Float32Array(N); const wall = new Uint8Array(N), damp = new Float32Array(N), I = new Float32Array(NY);
+for (let j = 0; j < NY; j++) for (let i = 0; i < NX; i++) { const d = Math.min(i, NX - 1 - i, j, NY - 1 - j); damp[j * NX + i] = d < SP ? ((SP - d) / SP) ** 2 * .25 : 0;   /* 흡수층: 파장보다 두껍고 완만하게, 속도(u − 이전 u)에 걸리는 감쇠 — 반사가 거의 없다(numpy 로 간섭무늬 위치가 이론값과 맞는지 확인) */ }
+const st = {kind: 'water', bar: 'none', lam: 16, d: 56, w: 6, bx: 80, src: [[50, 47], [50, 103]], t: 0, probe: null};
+const SCREEN = NX - SP - 14;   // 스크린 열: 흡수층 가장자리에서 14칸 안쪽(가장자리 바로 앞은 흡수층 때문에 세기가 일그러진다 — numpy 로 확인)
+function buildWall(){ wall.fill(0); if (st.bar === 'none') return; const c = NY / 2, gaps = st.bar === 'one' ? [c] : [c - st.d / 2, c + st.d / 2];
+  for (let j = 0; j < NY; j++) { const open = gaps.some(g => Math.abs(j - g) < st.w / 2); if (!open) for (let k = 0; k < 2; k++) wall[j * NX + st.bx + k] = 1; } }
+function calm(){ u.fill(0); v.fill(0); I.fill(0); }
+function step(n){ const w = TAU * Math.sqrt(c2) / st.lam;   /* 파장 λ칸 = 속력 ÷ 진동수 */
+  for (let s = 0; s < n; s++) { st.t++; const drive = Math.sin(w * st.t);
+    if (st.bar === 'none') st.src.forEach(([x, y]) => { u[(y | 0) * NX + (x | 0)] += drive * .5; });   /* 파원은 에너지만 보탠다(값을 고정하면 지나가는 파동을 반사) */
+    else for (let j = 0; j < NY; j++) u[j * NX + SP] += drive * .12;   /* 장벽이 있으면 왼쪽에서 평면파 */
+    for (let j = 1; j < NY - 1; j++) for (let i = 1; i < NX - 1; i++) { const k = j * NX + i; if (wall[k]) { un[k] = 0; continue; } const lap = u[k - 1] + u[k + 1] + u[k - NX] + u[k + NX] - 4 * u[k]; const sg = damp[k]; un[k] = (2 * u[k] - (1 - sg) * v[k] + c2 * lap) / (1 + sg); }
+    const t = v; v = u; u = un; un = t;
+    for (let j = 0; j < NY; j++) { const a = u[j * NX + SCREEN]; I[j] += (a * a - I[j]) * .004; } } }   /* 스크린: 진폭²의 시간 평균 */
+
+// ---------- 그리기 ----------
+const off = document.createElement('canvas'); off.width = NX; off.height = NY; const og = off.getContext('2d'), img = og.createImageData(NX, NY);
+const sc = () => Math.min(S.w / NX, S.h / NY), ox = () => (S.w - NX * sc()) / 2, oy = () => (S.h - NY * sc()) / 2;
+const toS = (i, j) => [ox() + (i + .5) * sc(), oy() + (j + .5) * sc()], toG = (x, y) => [(x - ox()) / sc() - .5, (y - oy()) / sc() - .5];
+const LCOL = () => { const l = 400 + (st.lam - 10) / 16 * 300; return l < 490 ? [80, 120, 255] : l < 570 ? [60, 220, 90] : l < 600 ? [250, 220, 40] : [255, 70, 50]; };   /* 빛: 파장이 길수록 빨강 쪽(보기용 대응) */
+function drawField(){ const d = img.data, k = st.kind, lc = LCOL();
+  for (let n = 0; n < N; n++) { const a = Math.max(-1, Math.min(1, u[n] * 2.6)), p = n * 4;
+    if (wall[n]) { d[p] = 70; d[p + 1] = 76; d[p + 2] = 84; }
+    else if (k === 'water') { const s = 150 + a * 95; d[p] = s * .55; d[p + 1] = s * .8; d[p + 2] = Math.min(255, s * 1.05 + 30); }   /* 마루는 밝고 골은 어둡게 */
+    else if (k === 'sound') { d[p] = 245 - (a < 0 ? -a * 150 : 0); d[p + 1] = 245 - Math.abs(a) * 150; d[p + 2] = 245 - (a > 0 ? a * 150 : 0); }   /* 밀(빨강)·소(파랑) */
+    else { const b = a * a; d[p] = 8 + lc[0] * b; d[p + 1] = 8 + lc[1] * b; d[p + 2] = 14 + lc[2] * b; }   /* 빛: 세기(진폭²)만 보인다 */
+    d[p + 3] = 255; }
+  og.putImageData(img, 0, 0); const g = S.g; g.fillStyle = k === 'light' ? '#0b0f17' : '#e9eef3'; g.fillRect(0, 0, S.w, S.h); g.imageSmoothingEnabled = true; g.drawImage(off, ox(), oy(), NX * sc(), NY * sc());
+  const [sx0, sy0] = toS(SCREEN, 0), [, sy1] = toS(SCREEN, NY - 1), mx = Math.max(...I.slice(SP, NY - SP)) || 1;   /* 스크린의 밝기 띠 */
+  for (let j = SP; j < NY - SP; j++) { const b = Math.min(1, I[j] / mx); g.fillStyle = k === 'light' ? `rgba(${lc[0]},${lc[1]},${lc[2]},${b})` : `rgba(255,${200 - 120 * b},60,${.15 + .85 * b})`; const [, y] = toS(0, j); g.fillRect(sx0 - 3, y - sc() / 2, 8, sc() + .5); }
+  label(g, '스크린', sx0 + 2, sy0 + SP * sc() - 10, {size: 11, weight: 700, color: k === 'light' ? '#cfd8e3' : '#33404d'});
+  if (st.bar === 'none') st.src.forEach(([x, y], i) => { const [px, py] = toS(x, y), on = drag.hover === i || drag.active === i; g.fillStyle = C.hot; g.beginPath(); g.arc(px, py, on ? 8 : 6, 0, TAU); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); label(g, i ? 'S₂' : 'S₁', px - 16, py - 12, {size: 12, weight: 700, color: k === 'light' ? '#fff' : '#33404d'}); });
+  else { const [bxS] = toS(st.bx + .5, 0), on = drag.hover === 'bar' || drag.active === 'bar'; if (on) { g.strokeStyle = C.accent; g.lineWidth = 2; g.setLineDash([5, 4]); g.strokeRect(bxS - 8, oy(), 16, NY * sc()); g.setLineDash([]); } }
+  if (st.probe) { const [px, py] = toS(...st.probe), pd = pathDiff(); g.strokeStyle = k === 'light' ? '#fff' : C.ink; g.lineWidth = 1.5; g.setLineDash([4, 4]); slits().forEach(([x, y]) => { const [a, b] = toS(x, y); g.beginPath(); g.moveTo(a, b); g.lineTo(px, py); g.stroke(); }); g.setLineDash([]);
+    g.beginPath(); g.arc(px, py, 6, 0, TAU); g.stroke(); if (pd != null) label(g, `경로차 ${pd.toFixed(2)}λ`, px + 10, py - 12, {size: 12, weight: 700, align: 'left', color: k === 'light' ? '#fff' : C.ink}); } }
+const slits = () => st.bar === 'none' ? st.src : st.bar === 'two' ? [[st.bx + 1, NY / 2 - st.d / 2], [st.bx + 1, NY / 2 + st.d / 2]] : [];
+const pathDiff = () => { const s = slits(); if (s.length < 2 || !st.probe) return null; const [x, y] = st.probe, d1 = Math.hypot(x - s[0][0], y - s[0][1]), d2 = Math.hypot(x - s[1][0], y - s[1][1]); return Math.abs(d1 - d2) / st.lam; };
+function drawGraph(){ const m = Kit.axes(Gr, {x: [-50, 50, 25, '스크린 위의 위치 (칸, 가운데 0)'], y: [0, 1, .5, '상대 세기']}), mx = Math.max(...I.slice(SP, NY - SP)) || 1, P = []; for (let j = SP; j < NY - SP; j++) P.push([j - (NY - 1) / 2, I[j] / mx]); Kit.line(Gr, P, m, C.accent, 2.2); }
+
+// ---------- 끌기·누르기 ----------
+const drag = Kit.grab(S.cv, {hit: (x, y) => { if (st.bar === 'none') { let r = null; st.src.forEach(([i, j], k) => { const [px, py] = toS(i, j); if (Math.hypot(x - px, y - py) < 22) r = k; }); if (r != null) return r; }
+    else { const [bxS] = toS(st.bx + .5, 0); if (Math.abs(x - bxS) < 14) return 'bar'; }
+    const [gi, gj] = toG(x, y); if (gi >= 0 && gi < NX && gj >= 0 && gj < NY) return 'probe'; return null; },
+  move: (t, x, y) => { const [gi, gj] = toG(x, y);
+    if (t === 'probe') { st.probe = [Math.max(0, Math.min(NX - 1, gi)), Math.max(0, Math.min(NY - 1, gj))]; }
+    else if (t === 'bar') { st.bx = Math.round(Math.max(SP + 16, Math.min(SCREEN - 30, gi))); buildWall(); I.fill(0); }
+    else { st.src[t] = [Math.round(Math.max(SP + 2, Math.min(SCREEN - 10, gi))), Math.round(Math.max(SP + 2, Math.min(NY - SP - 3, gj)))]; I.fill(0); } ledger(); }});
+
+// ---------- 조절 ----------
+const cm = n => (n * .5).toFixed(1) + ' cm';   /* 물결파 1칸 ≈ 0.5 cm */
+const unitTxt = n => st.kind === 'water' ? cm(n) : n + '칸';
+function sync(){ $('lamOut').textContent = unitTxt(st.lam); $('ddOut').textContent = unitTxt(st.d); $('wwOut').textContent = unitTxt(st.w); $('wwF').style.display = st.bar === 'none' ? 'none' : ''; $('ddF').style.display = st.bar === 'one' ? 'none' : ''; }
+$('lam').oninput = e => { st.lam = +e.target.value; I.fill(0); sync(); ledger(); };
+$('dd').oninput = e => { st.d = +e.target.value; const c = NY / 2; st.src = [[st.src[0][0], c - st.d / 2], [st.src[1][0], c + st.d / 2]]; buildWall(); I.fill(0); sync(); ledger(); };
+$('ww').oninput = e => { st.w = +e.target.value; buildWall(); I.fill(0); sync(); ledger(); };
+$('calm').onclick = () => { calm(); };
+Kit.seg($('barSeg'), 'bar', b => { st.bar = b; buildWall(); calm(); sync(); ledger(); });
+document.querySelectorAll('[data-kind]').forEach(b => b.onclick = () => { st.kind = b.dataset.kind; document.querySelectorAll('[data-kind]').forEach(x => x.setAttribute('aria-pressed', x === b)); sync(); ledger(); });
+
+function ledger(){ const pd = pathDiff(), r = pd == null ? null : Math.abs(pd - Math.round(pd)), res = r == null ? '—' : r < .15 ? '보강 간섭' : r > .35 ? '상쇄 간섭' : '중간';
+  Kit.html('stats', [[unitTxt(st.lam), '파장 λ'], [st.bar === 'one' ? unitTxt(st.w) : unitTxt(st.d), st.bar === 'one' ? '슬릿 폭' : st.bar === 'two' ? '슬릿 사이 거리 d' : '두 파원 사이 거리 d'], [pd == null ? '—' : pd.toFixed(2) + 'λ', '누른 점의 경로차'], [res, '누른 점']].map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join(''));
+  const K = {water: '물결파는 <b>마루(밝은 곳)</b>와 <b>골(어두운 곳)</b>이 번갈아 퍼져요.', sound: '소리는 공기가 <b>빽빽한 곳(빨강)</b>과 <b>성긴 곳(파랑)</b>이 퍼져 나가는 파동이에요. 상쇄되는 곳에서는 소리가 작게 들려요(소음 제거의 원리).', light: '빛은 마루·골이 보이지 않고 <b>세기(밝기)</b>만 보여요. 스크린에 밝고 어두운 무늬가 번갈아 생기는 것이 빛이 파동이라는 증거예요.'}[st.kind];
+  const B = {none: '두 파원에서 나온 파동이 겹치면 경로차가 파장의 정수배인 곳은 보강, 반 파장의 홀수배인 곳은 상쇄돼요. 파원 사이 거리나 파장을 바꾸면 상쇄되는 선(마디선)의 수와 간격이 바뀌어요.', one: '좁은 틈을 지난 파동은 틈 뒤로 넓게 퍼져요(회절). 틈이 좁을수록, 파장이 길수록 더 많이 퍼져요.', two: '두 슬릿이 새 파원처럼 같은 위상으로 파동을 내보내 스크린에 밝고 어두운 무늬가 번갈아 생겨요. 슬릿 사이 거리 d가 작을수록, 파장이 길수록 무늬 간격이 넓어져요.'}[st.bar];
+  Kit.html('explain', K + ' ' + B); }
+
+buildWall(); sync(); ledger();
+Kit.loop(dt => step(Math.max(1, Math.round(dt * 60 * 3))), () => { drawField(); drawGraph(); }, $('play'));   /* 한 화면에 약 3걸음, [느리게]면 dt 가 작아져 걸음 수가 준다 */
+})();
+</script>
+</body>
+</html>

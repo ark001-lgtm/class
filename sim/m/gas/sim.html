@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>열역학 실험실 · 역학과 에너지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<script src="../../assets/catalog.js"></script>
+<script src="../../assets/simkit.js"></script>
+<script src="../../assets/simex.js"></script>
+<script src="../../assets/labdraw.js"></script>
+<script src="../../assets/vendor/three.min.js"></script>
+<script src="../../assets/sim3d.js"></script>
+<script src="../../assets/lessonbar.js" defer></script>
+</head>
+<body data-root="../../" class="area-phy">
+<div class="wrap">
+  <nav class="topbar" data-topbar="역학과 에너지|03 열과 에너지" data-ws="worksheet.html"></nav>
+  <header class="page">
+    <div>
+      <div class="eyebrow"><i class="area-dot"></i>역학과 에너지 · 03 열과 에너지 <span class="code">12역학02-02</span><span class="code">12역학02-03</span><span class="code">12역학02-04</span><span class="code">12역학02-01</span><span class="code">12역학02-05</span></div>
+      <h1>열역학 실험실</h1>
+    </div>
+    <div class="seg" role="group" aria-label="차시 고르기">
+      <button type="button" data-mode="heatq">1. 열전달·비열·잠열</button>
+      <button type="button" data-mode="kinetic">2. 기체 분자 운동</button>
+      <button type="button" data-mode="cycle">3. 열역학 과정과 순환</button>
+      <button type="button" data-mode="entropy">4. 엔트로피와 비가역 현상</button>
+    </div>
+  </header>
+  <div class="main">
+    <section class="panel scene" aria-label="실험 장치">
+      <div class="canvas-box"><canvas id="scene" aria-label="기체 실험 장치"></canvas></div>
+      <div class="controls">
+        <label class="field" data-only="kinetic" for="kt">온도 <input type="range" id="kt" min="100" max="900" step="50" value="300"><output id="ktOut">300 K</output></label>
+        <label class="field" data-only="kinetic" for="kv">부피 <input type="range" id="kv" min="0.5" max="1" step="0.05" value="1"><output id="kvOut">1.00 V₀</output></label>
+        <label class="field" data-only="kinetic" for="kn">분자 수 <input type="range" id="kn" min="40" max="200" step="20" value="120"><output id="knOut">120 개</output></label>
+        <label class="field" data-only="cycle" for="p1">낮은 압력 <input type="range" id="p1" min="100" max="200" step="20" value="100"><output id="p1Out">100 kPa</output></label>
+        <label class="field" data-only="cycle" for="p2">높은 압력 <input type="range" id="p2" min="200" max="400" step="20" value="300"><output id="p2Out">300 kPa</output></label>
+        <label class="field" data-only="cycle" for="v2">최대 부피 <input type="range" id="v2" min="2" max="5" step="0.5" value="3"><output id="v2Out">3.0 L</output></label>
+        <div class="field" data-only="heatq"><div class="seg" id="hqSub"><button type="button" data-hqs="curve">가열 곡선 (비열·잠열)</button><button type="button" data-hqs="wall">단열재 비교</button></div></div>
+        <label class="field" data-only="heatq" data-hq="curve" for="hqm1">얼음 질량 <input type="range" id="hqm1" min="0.1" max="1" step="0.1" value="0.5"><output id="hqm1Out">0.5 kg</output></label>
+        <label class="field" data-only="heatq" data-hq="curve" for="hqP">가열기 <input type="range" id="hqP" min="500" max="2000" step="250" value="1000"><output id="hqPOut">1000 W</output></label>
+        <button class="btn primary" type="button" id="hqGo" data-only="heatq" data-hq="curve">가열</button>
+        <button class="btn" type="button" id="hqReset" data-only="heatq" data-hq="curve">처음부터</button>
+        <div class="field" data-only="heatq" data-hq="wall"><div class="seg" id="hqMat"><button type="button" data-hqm="concrete">콘크리트</button><button type="button" data-hqm="brick">벽돌</button><button type="button" data-hqm="wood">나무</button><button type="button" data-hqm="glass">유리</button><button type="button" data-hqm="styro">스티로폼</button><button type="button" data-hqm="vacuum">진공 단열재</button></div></div>
+        <label class="field" data-only="heatq" data-hq="wall" for="hqd">두께 <input type="range" id="hqd" min="1" max="30" step="1" value="10"><output id="hqdOut">10 cm</output></label>
+        <label class="field" data-only="entropy" for="enN">분자 수 <input type="range" id="enN" min="4" max="200" step="2" value="40"><output id="enNOut">40 개</output></label>
+        <button class="btn primary" type="button" id="enOpen" data-only="entropy">칸막이 열기</button>
+        <button class="btn" type="button" id="enRev" data-only="entropy">속도 모두 뒤집기</button>
+        <button class="btn" type="button" id="enReset" data-only="entropy">처음부터</button>
+      </div>
+    </section>
+    <aside class="panel ledger" aria-label="설명"><div class="stats" id="stats"></div><p class="explain" id="explain"></p><p class="note" id="tip"></p></aside>
+  </div>
+  <div class="lower">
+    <section class="panel"><h2 id="gTitle">그래프</h2><p class="sub" id="gSub"></p><div class="graph-box" style="margin-top:8px"><canvas id="graph" aria-label="그래프"></canvas></div></section>
+    <section class="panel"><h2 id="tTitle">정리</h2><div class="tbl-wrap"><table class="data"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div></section>
+  </div>
+  <section aria-label="생각해 보기">
+    <h2 style="margin-bottom:10px">생각해 보기</h2>
+    <div class="think">
+      <details class="q"><summary><span class="qnum">Q1</span>온도가 2배가 되면 분자의 평균 속력도 2배가 될까?</summary><p>아니에요. 온도가 높아지면 분자가 평균적으로 빨라지지만 속력이 온도에 정비례하지는 않아요. 시뮬레이션에서 온도를 300 K → 600 K로 바꾸고 속력 분포가 얼마나 오른쪽으로 옮겨 가는지 확인해 보세요(2배보다 덜 옮겨 가요).</p></details>
+      <details class="q"><summary><span class="qnum">Q2</span>순환 과정을 한 바퀴 돌면 기체의 내부 에너지 변화는?</summary><p>0이에요. 처음 상태로 되돌아오면 온도가 같아지므로 내부 에너지도 같아요. 그래서 한 순환 동안 흡수한 알짜 열 = 기체가 한 알짜 일 = P–V 그래프에서 닫힌 곡선의 넓이예요.</p></details>
+      <details class="q"><summary><span class="qnum">Q3</span>순환을 반대 방향(시계 반대 방향)으로 돌리면 무엇이 될까?</summary><p>외부에서 일을 받아 저온에서 열을 빼앗아 고온으로 보내는 냉장고(열펌프)가 돼요. 시계 방향 순환은 열기관이에요.</p></details>
+    </div>
+  </section>
+  <footer class="site" data-footer data-extra="이상 기체. 분자 운동 화면은 3차원 상자 모형이며 압력은 상대값. 순환 과정은 단원자 이상 기체."></footer>
+</div>
+<script>
+(() => {
+const {C, $, canvas, axes, line, arrow, label} = Kit;
+const S = canvas($('scene')), G = canvas($('graph')), TAU = Math.PI * 2;
+const st = {mode: 'kinetic', T: 300, V: 1, N: 120, parts: [], imp: 0, it: 0, Pm: 0, P1: 100, P2: 300, V1: 1, V2: 3, u: 0};
+/* ===== 1. 기체 분자 운동 (3차원 상자 모형, 평면 그림은 옆에서 본 모습) ===== */
+const VS = 70; // 300 K에서 v_rms = 70√2 px/s 정도
+const gauss = () => { let u = 0, v = 0; while (!u) u = Math.random(); v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v); };
+const box = () => { const W = S.w, H = S.h, bw = W * .62 * st.V; return {x0: W * .06, y0: H * .1, w: bw, h: H * .72, d: H * .5}; };
+function spawn(){ const b = box(), s = VS * Math.sqrt(st.T / 300); st.parts = Array.from({length: st.N}, () => ({x: b.x0 + Math.random() * b.w, y: b.y0 + Math.random() * b.h, z: Math.random() * b.d, vx: gauss() * s, vy: gauss() * s, vz: gauss() * s})); st.imp = 0; st.it = 0; }
+function rescaleT(oldT){ const f = Math.sqrt(st.T / oldT); st.parts.forEach(p => { p.vx *= f; p.vy *= f; p.vz *= f; }); st.imp = 0; st.it = 0; }
+function stepK(dt){ const b = box(); st.parts.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.z += p.vz * dt;
+  if (p.z < 0) { p.z = -p.z; p.vz = -p.vz; st.imp += 2 * Math.abs(p.vz); } if (p.z > b.d) { p.z = 2 * b.d - p.z; p.vz = -p.vz; st.imp += 2 * Math.abs(p.vz); }
+  if (p.x < b.x0) { p.x = 2 * b.x0 - p.x; p.vx = -p.vx; st.imp += 2 * Math.abs(p.vx); } if (p.x > b.x0 + b.w) { p.x = 2 * (b.x0 + b.w) - p.x; p.vx = -p.vx; st.imp += 2 * Math.abs(p.vx); }
+  if (p.y < b.y0) { p.y = 2 * b.y0 - p.y; p.vy = -p.vy; st.imp += 2 * Math.abs(p.vy); } if (p.y > b.y0 + b.h) { p.y = 2 * (b.y0 + b.h) - p.y; p.vy = -p.vy; st.imp += 2 * Math.abs(p.vy); } });
+  st.it += dt; if (st.it > 3) { st.imp *= .5; st.it *= .5; } }
+// 압력 기준값: 300 K, V₀, 120개일 때의 이론값 → 1.00
+const Pth = () => (st.N / 120) * (st.T / 300) / st.V, Pmeas = () => { const b = box(), area = 2 * (b.w * b.h + b.w * b.d + b.h * b.d); if (st.it < .3) return null; const P = st.imp / (st.it * area); // 3차원: P = N m⟨vx²⟩ / V, m = 1
+  return P / (120 * VS * VS / (S.w * .62 * b.h * b.d)); };
+function drawKinetic(){ const g = S.g, W = S.w, H = S.h, b = box();
+  g.fillStyle = Kit.tempColor(st.T, 100, 900); g.globalAlpha = .08; g.fillRect(b.x0, b.y0, b.w, b.h); g.globalAlpha = 1; g.strokeStyle = C.ink; g.lineWidth = 3; g.beginPath(); g.moveTo(b.x0 + b.w, b.y0); g.lineTo(b.x0, b.y0); g.lineTo(b.x0, b.y0 + b.h); g.lineTo(b.x0 + b.w, b.y0 + b.h); g.stroke();
+  g.fillStyle = '#9aa6b8'; g.fillRect(b.x0 + b.w, b.y0 - 6, 12, b.h + 12); g.fillRect(b.x0 + b.w + 12, b.y0 + b.h / 2 - 5, W * .3, 10); label(g, '피스톤', b.x0 + b.w + 6, b.y0 - 14, {size: 10, color: C.muted}); if (typeof pisDrag !== 'undefined' && (pisDrag.hover ?? pisDrag.active) != null) { g.strokeStyle = C.ink; g.setLineDash([4, 3]); g.lineWidth = 1.5; g.strokeRect(b.x0 + b.w - 5, b.y0 - 10, 22, b.h + 20); g.setLineDash([]); }
+  const s0 = VS * Math.sqrt(st.T / 300); st.parts.forEach(p => { const sp = Math.hypot(p.vx, p.vy, p.vz), f = Math.min(1, sp / (s0 * 3)); g.fillStyle = `hsl(${215 - 215 * f} 75% 52%)`; g.beginPath(); g.arc(p.x, p.y, 4, 0, TAU); g.fill(); });
+  label(g, '파랑: 느린 분자 · 빨강: 빠른 분자', b.x0, H * .9, {size: 11, color: C.muted, align: 'left'}); const pm = Pmeas(); label(g, `측정 압력 ${pm ? pm.toFixed(2) : '…'} · 이론 ${Pth().toFixed(2)} (상대값)`, b.x0, H * .9 + 18, {size: 12, weight: 700, align: 'left'}); }
+/* ===== 2. 순환 과정 (사각형 순환, 단원자 이상 기체) ===== */
+const corners = () => [[st.V1, st.P1], [st.V1, st.P2], [st.V2, st.P2], [st.V2, st.P1]]; // A→B 등적 가열, B→C 등압 팽창, C→D 등적 냉각, D→A 등압 압축
+const legs = () => { const [[Va, Pa], [Vb, Pb], [Vc, Pc], [Vd, Pd]] = corners(), U = (P, V) => 1.5 * P * V; // kPa·L = J
+  const L = [['A→B 등적 가열', 0, U(Pb, Vb) - U(Pa, Va)], ['B→C 등압 팽창', Pb * (Vc - Vb), U(Pc, Vc) - U(Pb, Vb)], ['C→D 등적 냉각', 0, U(Pd, Vd) - U(Pc, Vc)], ['D→A 등압 압축', Pd * (Va - Vd), U(Pa, Va) - U(Pd, Vd)]];
+  return L.map(([n, W, dU]) => ({n, W, dU, Q: W + dU})); };
+const Wnet = () => (st.P2 - st.P1) * (st.V2 - st.V1), Qin = () => legs().filter(l => l.Q > 0).reduce((s, l) => s + l.Q, 0), eff = () => Wnet() / Qin();
+function cpos(u){ const c = corners(), k = Math.floor(u * 4) % 4, f = u * 4 - Math.floor(u * 4), a = c[k], b = c[(k + 1) % 4]; return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, k]; }
+function ldr(){ LD.dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark'; LD.k = Math.max(1, 560 / Math.max(S.w, 1)); }
+function drawCycle(){ const g = S.g, W = S.w, H = S.h, [V, P, k] = cpos(st.u), T = P * V / (1 * 8.314) * 1, cx = W * .3, base = H * .82, cw = 120, hh = 40 + V / 5 * (H * .55);
+  ldr(); const heat = k === 0 || k === 1; LD.bg(g, W, H, {top: base + 48}); LD.hotplate(g, cx, base + 48, cw + 50, {on: heat, power: heat ? .9 : 0});
+  if (!heat) { [[-40, 0], [-10, 4], [22, -2], [44, 3]].forEach(([dx, dy]) => { const ig = g.createLinearGradient(cx + dx, base + 4, cx + dx + 18, base + 20); ig.addColorStop(0, 'rgba(235,248,255,.95)'); ig.addColorStop(1, 'rgba(150,200,235,.9)'); g.fillStyle = ig; g.save(); g.translate(cx + dx, base + 12 + dy); g.rotate(dx / 120); g.fillRect(-8, -8, 16, 16); g.restore(); }); }
+  const Tmax = st.P2 * st.V2, tc = Kit.tempColor(P * V, st.P1 * st.V1, Tmax); g.fillStyle = tc; g.globalAlpha = .3; g.fillRect(cx - cw / 2, base - hh, cw, hh); g.globalAlpha = 1;
+  g.fillStyle = 'rgba(220,235,245,.25)'; g.fillRect(cx - cw / 2 - 4, base - H * .72, cw + 8, H * .72); g.strokeStyle = 'rgba(80,100,120,.7)'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx - cw / 2, base - H * .72); g.lineTo(cx - cw / 2, base); g.lineTo(cx + cw / 2, base); g.lineTo(cx + cw / 2, base - H * .72); g.stroke(); g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(cx - cw / 2 + 4, base - H * .7, 4, H * .66);
+  const pm = g.createLinearGradient(0, base - hh - 12, 0, base - hh); pm.addColorStop(0, '#e2e8ee'); pm.addColorStop(1, '#6d767e'); g.fillStyle = pm; g.fillRect(cx - cw / 2 + 1, base - hh - 12, cw - 2, 12);
+  const rg = g.createLinearGradient(cx - 5, 0, cx + 5, 0); rg.addColorStop(0, '#8d98a2'); rg.addColorStop(.5, '#e2e8ee'); rg.addColorStop(1, '#7b8691'); g.fillStyle = rg; g.fillRect(cx - 5, base - hh - 52, 10, 40); g.fillStyle = '#5c6670'; g.fillRect(cx - 30, base - hh - 56, 60, 5);
+  const wts = Math.round(P / 50); for (let i = 0; i < wts; i++) { const wy = base - hh - 66 - i * 10, wg = g.createLinearGradient(cx - 26, 0, cx + 26, 0); wg.addColorStop(0, '#6b737b'); wg.addColorStop(.45, '#d6dce2'); wg.addColorStop(1, '#5a6169'); g.fillStyle = wg; g.fillRect(cx - 26, wy, 52, 9); g.fillStyle = 'rgba(0,0,0,.3)'; g.fillRect(cx - 26, wy + 8, 52, 1); }
+  label(g, `추 ${wts}개 · 압력 ${P.toFixed(0)} kPa`, cx + 34, base - hh - 60 - wts * 4.5, {size: 11, weight: 700, align: 'left'}); if (k === 0 || k === 2) label(g, k === 0 ? '압력이 커지는 만큼 추를 더 얹어 부피 일정' : '압력이 작아지는 만큼 추를 덜어 부피 일정', cx + 34, base - hh - 42 - wts * 4.5, {size: 10, color: C.muted, align: 'left'});
+  label(g, heat ? '열 흡수 (가열판)' : '열 방출 (얼음으로 식힘)', cx + cw / 2 + 110, base + 30, {size: 13, weight: 700, color: heat ? '#ffb199' : '#9cc4ff'});
+  const L = legs()[k], rx = W * .72; label(g, L.n, rx, H * .2, {size: 16, weight: 700, color: C.accent}); label(g, `Q = ΔU + W`, rx, H * .2 + 30, {size: 13}); label(g, `${L.Q.toFixed(0)} = ${L.dU.toFixed(0)} + ${L.W.toFixed(0)} (J)`, rx, H * .2 + 54, {size: 15, weight: 700});
+  label(g, `부피 ${V.toFixed(2)} L · 압력 ${P.toFixed(0)} kPa`, rx, H * .2 + 84, {size: 12, color: C.muted}); label(g, `한 바퀴 알짜 일 = 넓이 = ${Wnet().toFixed(0)} J`, rx, H * .62, {size: 13, weight: 700}); label(g, `열효율 = W / Q흡수 = ${(eff() * 100).toFixed(1)} %`, rx, H * .62 + 24, {size: 13, weight: 700, color: C.accent}); }
+
+/* ===== 3D 화면: 상자 속 분자 운동 (순환 과정은 2D) ===== */
+const V3 = Sim3D.create(S.cv.parentElement, {modes: ['kinetic']});
+const K3 = {};
+if (V3) {
+  const T = V3.T, X = V3.stage('box', {cam: [2.6, 3, 8.6], target: [0.3, 0, 0], minD: 4, maxD: 18});
+  K3.edge = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(1, 1, 1)), new T.LineBasicMaterial({color: 0x333a44})); X.root.add(K3.edge);
+  K3.glass = new T.Mesh(new T.BoxGeometry(1, 1, 1), new T.MeshStandardMaterial({color: 0x9fb4c8, transparent: true, opacity: .08, depthWrite: false, side: T.DoubleSide})); X.root.add(K3.glass);
+  K3.pis = new T.Mesh(new T.BoxGeometry(.12, 1, 1), new T.MeshStandardMaterial({color: 0x9aa6b8, roughness: .5})); X.root.add(K3.pis);
+  K3.rod = new T.Mesh(new T.CylinderGeometry(.05, .05, 1.4, 12), new T.MeshStandardMaterial({color: 0x9aa6b8})); K3.rod.rotation.z = Math.PI / 2; X.root.add(K3.rod);
+  V3.label('피스톤', K3.pis, {pos: [0, .56, 0], cls: 'dim'});
+  K3.parts = new T.InstancedMesh(new T.SphereGeometry(1, 12, 8), new T.MeshStandardMaterial({roughness: .4}), 400); K3.parts.instanceMatrix.setUsage(T.DynamicDrawUsage); X.root.add(K3.parts);
+  K3.lab = V3.label('', X.root, {pos: [0, -2.2, 0], cls: 'big'});
+  K3.key = V3.label('파랑: 느린 분자 · 빨강: 빠른 분자', X.root, {pos: [0, 2.2, 0], cls: 'dim'});
+  K3.m = new T.Matrix4(); K3.q = new T.Quaternion(); K3.v = new T.Vector3(); K3.s = new T.Vector3(); K3.c = new T.Color();
+}
+function draw3DK(){
+  if (!V3 || !V3.on(st.mode)) return false;
+  const b = box(), sc = 4.4 / (S.w * .62), W = b.w * sc, Hh = b.h * sc, D = b.d * sc, x0 = -2.2;
+  K3.edge.scale.set(W, Hh, D); K3.edge.position.set(x0 + W / 2, 0, 0); K3.glass.scale.copy(K3.edge.scale); K3.glass.position.copy(K3.edge.position);
+  K3.lab.position.set(x0 + W / 2, -Hh / 2 - .35, D / 2); K3.key.position.set(x0 + W / 2, Hh / 2 + .35, 0); K3.pis.scale.set(1, Hh, D); K3.pis.position.set(x0 + W + .06, 0, 0); K3.rod.position.set(x0 + W + .8, 0, 0);
+  const s0 = VS * Math.sqrt(st.T / 300), r = .045;
+  st.parts.forEach((p, i) => { K3.v.set(x0 + (p.x - b.x0) * sc, Hh / 2 - (p.y - b.y0) * sc, -D / 2 + p.z * sc); K3.m.compose(K3.v, K3.q, K3.s.set(r, r, r)); K3.parts.setMatrixAt(i, K3.m);
+    const f = Math.min(1, Math.hypot(p.vx, p.vy, p.vz) / (s0 * 3)); K3.c.setHSL((215 - 215 * f) / 360, .75, .52); K3.parts.setColorAt(i, K3.c); });
+  K3.parts.count = st.parts.length; K3.parts.instanceMatrix.needsUpdate = true; if (K3.parts.instanceColor) K3.parts.instanceColor.needsUpdate = true;
+  const pm = Pmeas(); K3.lab.set(`측정 압력 ${pm ? pm.toFixed(2) : '…'} · 이론 ${Pth().toFixed(2)} (상대값)`);
+  V3.render('box'); return true;
+}
+
+/* ===== 그래프·표 ===== */
+function drawGraph(){ const g = G.g;
+  if (st.mode === 'kinetic') { const s0 = VS * Math.sqrt(st.T / 300), mx = VS * 4, bins = 20, h = new Array(bins).fill(0); st.parts.forEach(p => { const i = Math.floor(Math.hypot(p.vx, p.vy, p.vz) / mx * bins); if (i < bins) h[i]++; }); const m = axes(G, {x: [0, 4, 1, '분자 속력 (300 K의 기준 속력 배)'], y: [0, .25, .05, '비율']}); h.forEach((c, i) => { g.fillStyle = 'rgba(47,111,208,.35)'; const x0 = m.X(i * 4 / bins), x1 = m.X((i + 1) * 4 / bins), y = m.Y(c / st.parts.length); g.fillRect(x0, y, x1 - x0 - 1, m.Y(0) - y); });
+    const P = []; for (let v = 0; v <= 4; v += .02) { const vv = v * VS, f = Math.sqrt(2 / Math.PI) * vv * vv / s0 ** 3 * Math.exp(-vv * vv / (2 * s0 * s0)) * VS * 4 / bins; P.push([v, f]); } line(G, P, m, C.hot, 2.5); label(g, '막대: 시뮬레이션 · 곡선: 이론 분포', m.X(2.6), m.Y(.23), {size: 10, color: C.muted}); }
+  else { const m = axes(G, {x: [0, 6, 1, '부피 (L)'], y: [0, 450, 50, '압력 (kPa)']}); cycM = m; const c = corners(); { const hv = typeof cycDrag !== 'undefined' ? cycDrag.hover ?? cycDrag.active : null; [[st.V2, st.P2, 'C'], [st.V1, st.P1, 'A']].forEach(([v, pp, id]) => { g.strokeStyle = C.hot; g.lineWidth = hv === id ? 3 : 2; g.beginPath(); g.arc(m.X(v), m.Y(pp), 9, 0, TAU); g.stroke(); }); }   /* 끌기 손잡이: C(최대 부피·높은 압력), A(낮은 압력) */ g.fillStyle = 'rgba(80,120,220,.15)'; g.beginPath(); c.forEach((p, i) => i ? g.lineTo(m.X(p[0]), m.Y(p[1])) : g.moveTo(m.X(p[0]), m.Y(p[1]))); g.closePath(); g.fill(); c.forEach((p, i) => { const q = c[(i + 1) % 4]; arrow(g, m.X(p[0]), m.Y(p[1]), m.X(q[0]), m.Y(q[1]), C.accent, 2.2); label(g, 'ABCD'[i], m.X(p[0]) + (i < 2 ? -10 : 10), m.Y(p[1]) + (i % 3 ? -10 : 10), {size: 12, weight: 700}); });
+    const [V, P] = cpos(st.u); g.fillStyle = C.hot; g.beginPath(); g.arc(m.X(V), m.Y(P), 6, 0, TAU); g.fill(); label(g, '색칠한 넓이 = 한 순환 동안 기체가 한 알짜 일', m.X((st.V1 + st.V2) / 2), m.Y((st.P1 + st.P2) / 2), {size: 10, color: C.muted, maxW: Math.max(80, m.X(st.V2) - m.X(st.V1) - 16)});   /* 색칠한 사각형 가운데(꼭짓점·손잡이와 겹치지 않게) */ } }
+function render(){ const s = $('stats'), th = $('thead'), tb = $('tbody'), set = (gt, gs, tt) => { $('gTitle').textContent = gt; $('gSub').textContent = gs; $('tTitle').textContent = tt; };
+  if (st.mode === 'kinetic') { const sp = st.T >= 600 ? '빠르다' : st.T <= 150 ? '느리다' : '보통'; s.innerHTML = `<div><b>${Pth().toFixed(2)}</b><span>이론 압력 (상대값) ∝ NT/V</span></div><div><b>${(st.T / 300).toFixed(2)} 배</b><span>절대 온도 (300 K 대비)</span></div><div><b>${sp}</b><span>분자의 평균 속력</span></div>`;
+    $('explain').innerHTML = '<b>이상 기체와 분자 운동</b>: 기체의 압력은 수많은 분자가 벽에 충돌하며 주는 충격량에서 생겨요. 온도가 높을수록 분자가 평균적으로 빠르게 움직여 더 세게, 더 자주 충돌해요. 이상 기체의 압력, 부피, 절대 온도, 분자 수 사이에는 PV = nRT의 관계가 있어요.'; $('tip').textContent = '온도를 올리면 분자가 빨라져 더 세게, 더 자주 충돌 → 압력 증가. 부피를 줄이면 벽에 더 자주 부딪혀 압력 증가(보일 법칙). 분자들의 속력은 모두 같지 않고 고르게 퍼진 분포를 이뤄요.';
+    th.innerHTML = '<tr><th>조건</th><th>온도</th><th>부피</th><th>분자 수</th><th>압력 (상대값)</th></tr>'; tb.innerHTML = [['기준', 300, 1, 120], ['온도 2배', 600, 1, 120], ['부피 절반', 300, .5, 120], ['분자 수 절반', 300, 1, 60]].map(([n, T, V, N]) => `<tr><td>${n}</td><td>${T} K</td><td>${V} V₀</td><td>${N}</td><td>${(N * T / V / 36000).toFixed(2)}</td></tr>`).join(''); set('분자 속력 분포', `T = ${st.T} K`, '이상 기체 법칙 확인'); }
+  else { const L = legs(); s.innerHTML = `<div><b>${Wnet().toFixed(0)} J</b><span>한 순환의 알짜 일</span></div><div><b>${Qin().toFixed(0)} J</b><span>흡수한 열</span></div><div><b>${(Qin() - Wnet()).toFixed(0)} J</b><span>방출한 열</span></div><div><b>${(eff() * 100).toFixed(1)} %</b><span>열효율</span></div>`;
+    $('explain').innerHTML = '<b>순환 과정</b>: 기체가 여러 과정을 거쳐 처음 상태로 돌아오는 과정. 한 순환 동안 ΔU = 0이므로 알짜 열 = 알짜 일 = P–V 그래프의 닫힌 넓이. 시계 방향으로 돌면 열기관이며, 열효율 e = W / Q흡수 = 1 − Q방출/Q흡수 (항상 1보다 작아요).'; $('tip').textContent = '각 과정에서 Q = ΔU + W를 확인하세요. 1 kPa·L = 1 J. 내부 에너지 변화 ΔU는 시뮬레이션이 계산해 보여 줘요.';
+    th.innerHTML = '<tr><th>과정</th><th>Q (J)</th><th>ΔU (J)</th><th>W (J)</th></tr>'; tb.innerHTML = L.map(l => `<tr><td>${l.n}</td><td>${l.Q.toFixed(0)}</td><td>${l.dU.toFixed(0)}</td><td>${l.W.toFixed(0)}</td></tr>`).join('') + `<tr><td><b>한 순환 합계</b></td><td>${L.reduce((s, l) => s + l.Q, 0).toFixed(0)}</td><td>${L.reduce((s, l) => s + l.dU, 0).toFixed(0)}</td><td>${L.reduce((s, l) => s + l.W, 0).toFixed(0)}</td></tr>`; set('압력–부피 그래프', 'A→B→C→D→A (시계 방향)', '과정별 에너지 출입'); } }
+const bind = (id, k, f, after) => { $(id).oninput = e => { const old = st[k]; st[k] = +e.target.value; $(id + 'Out').textContent = f(st[k]); if (after) after(old); render(); }; };
+// 끌기(기체 분자 운동): 피스톤을 좌우로 끌어 부피 — 3D 보기에서는 끄지 않음
+const pisDrag = Kit.grab(S.cv, {hit: (x, y) => { if (st.mode !== 'kinetic' || V3.on(st.mode)) return null; const b = box(); return x > b.x0 + b.w - 8 && x < b.x0 + b.w + 22 && y > b.y0 - 8 && y < b.y0 + b.h + 8 ? 0 : null; },
+  move: (i, x) => Kit.setRange('kv', (x - 6 - S.w * .06) / (S.w * .62))});
+bind('kt', 'T', v => v + ' K', old => rescaleT(old)); bind('kv', 'V', v => v.toFixed(2) + ' V₀', () => { st.imp = 0; st.it = 0; }); bind('kn', 'N', v => v + ' 개', spawn);
+// 끌기(열역학 순환): p-V 그래프의 꼭짓점 C를 끌면 최대 부피·높은 압력, A를 위아래로 끌면 낮은 압력
+let cycM = null;
+const cycDrag = Kit.grab(G.cv, {hit: (x, y) => { if (st.mode !== 'cycle' || !cycM) return null; if (Math.hypot(x - cycM.X(st.V2), y - cycM.Y(st.P2)) < 20) return 'C'; return Math.hypot(x - cycM.X(st.V1), y - cycM.Y(st.P1)) < 20 ? 'A' : null; },
+  move: (t, x, y) => { const v = (x - cycM.X(0)) / (cycM.X(1) - cycM.X(0)), pp = (cycM.Y(0) - y) / (cycM.Y(0) - cycM.Y(1)); if (t === 'C') { Kit.setRange('v2', v); Kit.setRange('p2', pp); } else Kit.setRange('p1', pp); }});
+bind('p1', 'P1', v => v + ' kPa'); bind('p2', 'P2', v => v + ' kPa'); bind('v2', 'V2', v => v.toFixed(1) + ' L');
+/* ===== 1. 열의 이동과 단열, 비열과 잠열 (새 모드) ===== */
+{
+const HQ = {sub: 'curve', m: .5, P: 1000, Q: 0, run: false, mat: 'styro', d: 10};
+const ci = 2100, cw = 4200, cs = 2000, Lf = 334e3, Lv = 2260e3;
+const seg = () => { const m = HQ.m; return [['얼음 데우기 (−20 → 0 °C)', m * ci * 20, '비열'], ['녹기 (0 °C)', m * Lf, '융해열'], ['물 데우기 (0 → 100 °C)', m * cw * 100, '비열'], ['끓기 (100 °C)', m * Lv, '기화열'], ['수증기 데우기 (100 → 120 °C)', m * cs * 20, '비열']]; };
+const total = () => seg().reduce((a, s) => a + s[1], 0);
+function state(Q){ const S = seg(); let q = Q; const m = HQ.m;
+  if (q < S[0][1]) return {T: -20 + q / (m * ci), ph: 0, f: 0};
+  q -= S[0][1]; if (q < S[1][1]) return {T: 0, ph: 1, f: q / S[1][1]};
+  q -= S[1][1]; if (q < S[2][1]) return {T: q / (m * cw), ph: 2, f: 1};
+  q -= S[2][1]; if (q < S[3][1]) return {T: 100, ph: 3, f: q / S[3][1]};
+  q -= S[3][1]; return {T: Math.min(120, 100 + q / (m * cs)), ph: 4, f: 1}; }
+const MAT = {concrete: ['콘크리트', 1.4, '#9aa0a6'], brick: ['벽돌', .7, '#b5654a'], wood: ['나무', .15, '#b08850'], glass: ['유리 (홑창)', 1.0, '#9fd3e6'], styro: ['스티로폼', .035, '#f1f1ea'], vacuum: ['진공 단열재', .005, '#d7dde8']};
+const loss = (k, d) => k * 25 / (d / 100); // W/m² (실내 20 °C, 바깥 −5 °C)
+const parts = Array.from({length: 70}, () => ({x: Math.random(), y: Math.random(), vx: Math.random() - .5, vy: Math.random() - .5}));
+const bindH = (id, k, f) => { Kit.$(id).oninput = e => { HQ[k] = +e.target.value; Kit.$(id + 'Out').textContent = f(HQ[k]); if (k === 'm') { HQ.Q = 0; HQ.run = false; } X.render(); }; };
+const X = {
+  enter(){ subUI(); },
+  step(dt){ if (HQ.sub === 'curve' && HQ.run) { HQ.Q += HQ.P * dt * 60; if (HQ.Q >= total()) { HQ.Q = total(); HQ.run = false; } if ((this._k = (this._k || 0) + dt) > .25) { this._k = 0; this.render(); } } parts.forEach(p => { const s = HQ.sub === 'curve' ? [.15, .35, .6, .9, 1.2][state(HQ.Q).ph] : .4; p.x += p.vx * dt * s; p.y += p.vy * dt * s; if (p.x < 0 || p.x > 1) p.vx *= -1; if (p.y < 0 || p.y > 1) p.vy *= -1; p.x = Math.max(0, Math.min(1, p.x)); p.y = Math.max(0, Math.min(1, p.y)); }); },
+  draw(){ const g = S.g, W = S.w, H = S.h; g.fillStyle = C.surface; g.fillRect(0, 0, W, H);
+    if (HQ.sub === 'curve') { const s = state(HQ.Q), bx = W * .2, by = H * .26, bw = W * .36, bh = H * .5;
+      ldr(); LD.bg(g, W, H, {top: by + bh + 40}); LD.hotplate(g, bx + bw / 2, by + bh + 40, bw + 40, {on: HQ.run, power: HQ.run ? .4 + .6 * HQ.P / 2000 : 0});   /* 달아오름 ∝ 가열기 출력 */
+      label(g, HQ.run ? `가열 중 · ${HQ.P} W` : `가열기 꺼짐 (${HQ.P} W로 맞춤)`, bx + bw / 2, by + bh + 56, {size: 11, color: '#fff'});
+      const km = .3 + .7 * HQ.m, fill = (s.ph < 3 ? .7 : s.ph === 4 ? 0 : .7 * (1 - s.f * .85)) * km,   /* 얼음 질량 → 입자 수·물 높이 ∝ 질량(최대 1 kg) */ /* 다 끓으면 물이 남지 않음 */ solid = s.ph === 0 ? 1 : s.ph === 1 ? 1 - s.f : 0;
+      const lf = fill * (1 - solid), nIce = Math.ceil(parts.length * km * solid), rows = Math.ceil(nIce / 9); /* 녹은 물만 액체로 채우고, 얼음은 덩어리로 */ g.fillStyle = 'rgba(80,150,230,.25)'; g.fillRect(bx, by + bh * (1 - lf), bw, bh * lf);
+      const ih0 = bh * (rows - 1) * .07 + 24, ws = by + bh * (1 - lf), dIce = nIce > 0 ? Math.min(by + bh - 4, ws + ih0 * .9) - (by + bh * .75 + 12) : 0;   /* 얼음은 바닥에 놓이고, 녹은 물이 충분하면 약 90 %가 잠긴 채 뜬다 */
+      const iceR = nIce > 0 ? [bx + bw * .17, by + bh * (.75 - (rows - 1) * .07) - 12 + dIce, bw * .62, ih0] : null;
+      if (nIce > 0) { const ix = bx + bw * .17, iw = bw * .62, iy = by + bh * (.75 - (rows - 1) * .07) - 12 + dIce, ih = ih0; g.fillStyle = 'rgba(205,230,250,.75)'; g.strokeStyle = 'rgba(120,170,215,.9)'; g.lineWidth = 1.5; g.beginPath(); g.roundRect(ix, iy, iw, ih, 6); g.fill(); g.stroke(); g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(ix + 5, iy + 4, 4, ih - 8); }
+      parts.forEach((p, i) => { if (i >= parts.length * km) return; const ice = i / (parts.length * km) < solid; let x, y;
+        if (ice) { const c = i % 9, r = Math.floor(i / 9); x = bx + bw * (.2 + c * .07) + Math.sin(i + HQ.Q * 1e-5) * 1.5; y = by + bh * (.75 - r * .07) + dIce; }
+        else if (s.ph >= 3 && i / (parts.length * km) >= 1 - (s.ph === 3 ? s.f * .9 : 1)) { x = bx + p.x * bw; y = by + p.y * bh * .45; }
+        else { x = bx + p.x * bw; y = by + bh * (1 - lf) + p.y * bh * lf; if (iceR && x > iceR[0] - 4 && x < iceR[0] + iceR[2] + 4 && y > iceR[1] - 4 && y < iceR[1] + iceR[3] + 4) return; }   /* 물 입자는 얼음 덩어리 속에 그리지 않는다 */
+        g.fillStyle = ice ? '#7fb6e6' : s.ph >= 3 && y < by + bh * (1 - lf) ? '#c7d3e0' : '#2f6fd0'; g.beginPath(); g.arc(x, y, 4, 0, TAU); g.fill(); });
+      g.fillStyle = 'rgba(220,235,245,.18)'; g.fillRect(bx, by, bw, bh); g.strokeStyle = 'rgba(70,90,110,.75)'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(bx - 6, by); g.lineTo(bx, by + 4); g.lineTo(bx, by + bh - 6); g.quadraticCurveTo(bx, by + bh, bx + 6, by + bh); g.lineTo(bx + bw - 6, by + bh); g.quadraticCurveTo(bx + bw, by + bh, bx + bw, by + bh - 6); g.lineTo(bx + bw, by); g.stroke(); g.fillStyle = 'rgba(255,255,255,.6)'; g.fillRect(bx + 5, by + 10, 5, bh - 24);
+      const tx = bx + bw + 40, ty0 = by, ty1 = by + bh, TY = t => ty1 - (t + 30) / 160 * (ty1 - ty0); g.fillStyle = C.soft; g.fillRect(tx - 6, ty0, 12, ty1 - ty0); g.fillStyle = C.hot; g.fillRect(tx - 3, TY(s.T), 6, ty1 - TY(s.T)); g.beginPath(); g.arc(tx, ty1 + 8, 10, 0, TAU); g.fill();
+      [-20, 0, 50, 100, 120].forEach(t => { g.fillStyle = C.muted; g.fillRect(tx + 8, TY(t), 6, 1); label(g, t + ' °C', tx + 18, TY(t), {size: 10, color: C.muted, align: 'left'}); });
+      label(g, `${s.T.toFixed(1)} °C`, W * .82, H * .45, {size: 15, weight: 700, color: C.hot});
+      const name = ['얼음 (고체)', '얼음 + 물 — 녹는 중', '물 (액체)', '물 + 수증기 — 끓는 중', '수증기 (기체)'][s.ph]; label(g, name, W * .5, 22, {size: 16, weight: 700, color: C.accent});
+      label(g, s.ph === 1 || s.ph === 3 ? '열을 받아도 온도 일정 → 상태 변화(잠열)' : '열을 받으면 온도 상승 (비열)', W * .5, 46, {size: 12});
+      label(g, `가한 열 ${(HQ.Q / 1000).toFixed(0)} kJ`, W * .82, H * .55, {size: 13, weight: 700});
+      label(g, '빠르기: 실제 1초 = 시뮬레이션 1분', W * .82, H - 18, {size: 10, color: C.muted});
+    } else { const mt = MAT[HQ.mat], x0 = W * .42, wd = Math.max(14, HQ.d / 30 * W * .2), q = loss(mt[1], HQ.d), mx = loss(1.4, 5);
+      g.fillStyle = 'rgba(224,83,63,.08)'; g.fillRect(0, 0, x0, H); g.fillStyle = 'rgba(47,111,208,.08)'; g.fillRect(x0 + wd, 0, W - x0 - wd, H);
+      g.fillStyle = mt[2]; g.fillRect(x0, H * .08, wd, H * .84); g.strokeStyle = C.line; g.strokeRect(x0, H * .08, wd, H * .84);
+      if (HQ.mat === 'styro') for (let i = 0; i < 40; i++) { g.strokeStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.arc(x0 + (i * 37 % 100) / 100 * wd, H * .1 + (i * 53 % 100) / 100 * H * .8, 4, 0, TAU); g.stroke(); }
+      label(g, '실내 20 °C', x0 / 2, 24, {size: 14, weight: 700, color: C.hot}); label(g, '바깥 −5 °C', x0 + wd + (W - x0 - wd) / 2, 24, {size: 14, weight: 700, color: C.phy}); label(g, `${mt[0]} ${HQ.d} cm`, x0 + wd / 2, H * .96, {size: 11, weight: 700});
+      const n = Math.max(1, Math.round(Math.sqrt(q / mx) * 9)), t = performance.now() / 1000;
+      for (let i = 0; i < n; i++) { const y = H * .15 + (i + .5) * H * .7 / n, ph = (t * .5 + i * .37) % 1, x = x0 - 60 + ph * (wd + 120); g.globalAlpha = Math.sin(ph * Math.PI); arrow(g, x - 18, y, x + 18, y, C.hot, 3); g.globalAlpha = 1; }
+      label(g, `빠져나가는 열: ${q < 10 ? '아주 적다' : q < 60 ? '적다' : q < 250 ? '많다' : '아주 많다'}`, W * .2, H * .5, {size: 14, weight: 700, color: C.accent});
+      label(g, '화살표가 많을수록 벽을 통해 전도되는 열이 많다', W * .74, H - 6, {size: 10, color: C.muted, base: 'bottom'}); }
+    this.graph(); },
+  graph(){ const g = G.g;
+    if (HQ.sub === 'curve') { const tot = total() / 1000, m = axes(G, {x: [0, Math.ceil(tot / 200) * 200, Math.ceil(tot / 1000) * 100, '가한 열 (kJ)'], y: [-30, 130, 20, '온도 (°C)']}), P = []; for (let q = 0; q <= total(); q += total() / 400) P.push([q / 1000, state(q).T]); line(G, P, m, C.line, 1.5, [4, 4]); line(G, P.filter(p => p[0] <= HQ.Q / 1000), m, C.hot, 2.5); g.fillStyle = C.hot; g.beginPath(); g.arc(m.X(HQ.Q / 1000), m.Y(state(HQ.Q).T), 5, 0, TAU); g.fill(); label(g, '수평 구간: 상태 변화 (잠열)', m.X(tot * .5), m.Y(118), {size: 10, color: C.muted}); }
+    else { const keys = Object.keys(MAT), m = axes(G, {x: [0, keys.length, 1, ''], y: [0, 1, .25, '빠져나가는 열 (콘크리트 = 1)']}, {noY: true}), base = loss(1.4, HQ.d); keys.forEach((k, i) => { const v = loss(MAT[k][1], HQ.d) / base; g.fillStyle = k === HQ.mat ? C.accent : 'rgba(120,130,150,.5)'; g.fillRect(m.X(i + .15), m.Y(Math.min(1, v)), m.X(.7) - m.X(0), m.Y(0) - m.Y(Math.min(1, v))); label(g, MAT[k][0], m.X(i + .5), m.Y(0) + 12, {size: 10}); }); g.fillStyle = C.surface; } },
+  render(){ if (HQ.sub === 'curve') { const S2 = seg(), s = state(HQ.Q); Kit.panel({stats: [[`${s.T.toFixed(1)} °C`, '현재 온도'], [`${(HQ.Q / 1000).toFixed(0)} kJ`, '가한 열'], [`${(total() / 1000).toFixed(0)} kJ`, '−20 °C 얼음 → 120 °C 수증기']], explain: '<b>비열</b>: 물질 1 kg의 온도를 1 °C 높이는 데 필요한 열(물 4200 J/(kg·°C)). 온도가 변할 때 열량 Q = mcΔT. <b>잠열</b>: 상태가 변하는 동안 온도 변화 없이 흡수·방출하는 열. 녹을 때 Q = m × 융해열(334 kJ/kg), 끓을 때 Q = m × 기화열(2260 kJ/kg).', tip: '그래프의 기울기가 작은 구간일수록 비열이 커요(같은 열에 온도가 덜 오름). 가장 긴 수평 구간은 끓는 구간 — 기화열이 가장 커요.', g: ['가열 곡선', `얼음 ${HQ.m} kg, −20 °C에서 시작`], t: '구간별 필요한 열', head: ['구간', '필요한 열 (kJ)', '구분'], rows: S2.map(r => [r[0], (r[1] / 1000).toFixed(1), r[2]])}); }
+    else { const mt = MAT[HQ.mat]; Kit.panel({stats: [[mt[0], '벽 재료'], [`${HQ.d} cm`, '두께'], [loss(mt[1], HQ.d) < 60 ? '좋음' : '부족', '단열 성능']], explain: '<b>단열</b>: 열의 이동(전도·대류·복사)을 막는 것. 고체 벽을 지나는 열은 주로 <b>전도</b>로 이동해요. 스티로폼처럼 공기를 작은 칸에 가둔 재료는 대류가 막히고 공기 자체가 열을 잘 전도하지 않아 단열이 잘 돼요. 두께가 두꺼울수록 열이 덜 빠져나가요.', tip: '패시브 하우스는 두꺼운 단열재, 3중 유리창, 틈새 막기로 열 손실을 줄여요. 진공 단열재는 전도·대류를 모두 막아요.', g: ['재료별 빠져나가는 열 비교', `같은 두께 ${HQ.d} cm`], t: '열을 잘 전달하는 정도(대략)', head: ['재료', '열 전달 정도'], rows: Object.values(MAT).map(r => [r[0], r[1] >= 1 ? '아주 잘 전달' : r[1] >= .5 ? '잘 전달' : r[1] >= .1 ? '보통' : '잘 전달 안 함'])}); } } };
+const subUI = () => document.querySelectorAll('[data-hq]').forEach(el => el.hidden = st.mode !== 'heatq' || el.dataset.hq !== HQ.sub);
+Kit.seg(Kit.$('hqSub'), 'hqs', v => { HQ.sub = v; subUI(); X.render(); })('curve');
+Kit.seg(Kit.$('hqMat'), 'hqm', v => { HQ.mat = v; X.render(); })('styro');
+bindH('hqm1', 'm', v => v.toFixed(1) + ' kg'); bindH('hqP', 'P', v => v + ' W'); bindH('hqd', 'd', v => v + ' cm');
+Kit.$('hqGo').onclick = () => { if (HQ.Q >= total()) HQ.Q = 0; HQ.run = !HQ.run; Kit.$('hqGo').textContent = HQ.run ? '가열 멈춤' : '가열'; };
+Kit.$('hqReset').onclick = () => { HQ.Q = 0; HQ.run = false; Kit.$('hqGo').textContent = '가열'; X.render(); };
+Kit.ex(st, {heatq: X});
+}
+/* ===== 4. 엔트로피와 비가역 현상 (새 모드) ===== */
+{
+const EN = {N: 40, open: false, ps: [], hist: [], t: 0, rev: false};
+const C2 = (n, k) => { let r = 1; for (let i = 1; i <= k; i++) r = r * (n - k + i) / i; return r; };
+function spawnE(){ EN.ps = Array.from({length: EN.N}, () => { const a = Math.random() * TAU; return {x: Math.random() * .48, y: Math.random(), vx: Math.cos(a) * .25, vy: Math.sin(a) * .25}; }); EN.open = false; EN.hist = []; EN.t = 0; EN.rev = false; }
+const nLeft = () => EN.ps.filter(p => p.x < .5).length;
+const X = {
+  enter(){ if (!EN.ps.length) spawnE(); },
+  step(dt){ EN.ps.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; if (p.y < 0) { p.y = -p.y; p.vy *= -1; } if (p.y > 1) { p.y = 2 - p.y; p.vy *= -1; } if (p.x < 0) { p.x = -p.x; p.vx *= -1; } if (p.x > 1) { p.x = 2 - p.x; p.vx *= -1; }
+      if (!EN.open) { if (p.x > .47 && p.vx > 0 && p.x - p.vx * dt <= .47) { p.x = .94 - p.x; p.vx *= -1; } } });
+    if (EN.open) { EN.t += dt; if (EN.hist.length === 0 || EN.t - EN.hist[EN.hist.length - 1][0] > .1) { EN.hist.push([EN.t, nLeft() / EN.N]); if (EN.hist.length > 400) EN.hist.shift(); } if ((this._k = (this._k || 0) + dt) > .25) { this._k = 0; this.render(); } } },
+  draw(){ const g = S.g, W = S.w, H = S.h, bx = W * .08, by = H * .14, bw = W * .84, bh = H * .62; g.fillStyle = C.surface; g.fillRect(0, 0, W, H);
+    g.strokeStyle = C.ink; g.lineWidth = 2; g.strokeRect(bx, by, bw, bh); if (!EN.open) { g.fillStyle = C.ink; g.fillRect(bx + bw * .5 - 2, by, 4, bh); }
+    else { g.setLineDash([4, 6]); g.strokeStyle = C.muted; g.beginPath(); g.moveTo(bx + bw / 2, by); g.lineTo(bx + bw / 2, by + bh); g.stroke(); g.setLineDash([]); }
+    const r = Math.max(2.5, Math.min(6, 60 / Math.sqrt(EN.N)));
+    EN.ps.forEach((p, i) => { g.fillStyle = i % 2 ? '#2f6fd0' : '#4a8ae0'; g.beginPath(); g.arc(bx + r + p.x * (bw - 2 * r), by + r + p.y * (bh - 2 * r), r, 0, TAU); g.fill(); }); /* 점이 벽 안쪽에 */
+    const L = nLeft(); label(g, `왼쪽 ${L}개`, bx + bw * .25, by - 14, {size: 14, weight: 700}); label(g, `오른쪽 ${EN.N - L}개`, bx + bw * .75, by - 14, {size: 14, weight: 700});
+    const lw = Math.log10(C2(EN.N, L)), lmax = Math.log10(C2(EN.N, Math.floor(EN.N / 2)));
+    label(g, EN.open ? '칸막이를 열었다 → 분자들이 저절로 퍼진다' : '칸막이로 막혀 있다 — [칸막이 열기]를 눌러 보자', W / 2, by + bh + 26, {size: 13, weight: 700, color: C.accent});
+    g.fillStyle = C.soft; g.fillRect(bx, by + bh + 46, bw, 14); g.fillStyle = C.hot; g.fillRect(bx, by + bh + 46, bw * (lmax ? lw / lmax : 1), 14); label(g, `이 배치가 나올 수 있는 경우의 수 (엔트로피의 크기): 최대의 ${lmax ? Math.round(lw / lmax * 100) : 100} % (로그 눈금)`, W / 2, by + bh + 74, {size: 11, color: C.muted});
+    if (EN.rev) label(g, '모든 분자의 속도를 거꾸로! (실제로는 불가능에 가까운 일)', W / 2, 22, {size: 12, weight: 700, color: C.hot});
+    this.graph(); },
+  graph(){ const g = G.g, half = G.w / 2, m1 = axes(G, {x: [0, 20, 5, '시간 (s)'], y: [0, 1, .25, '왼쪽 분자 비율']}, {R: half + 8});
+    line(G, EN.hist.map(([t, f]) => [Math.min(20, t), f]), m1, C.accent, 2.2); g.strokeStyle = C.muted; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(m1.X(0), m1.Y(.5)); g.lineTo(m1.X(20), m1.Y(.5)); g.stroke(); g.setLineDash([]);
+    const n = EN.N, mx = C2(n, Math.floor(n / 2)), m2 = axes(G, {x: [0, n, Math.max(1, Math.round(n / 4)), '왼쪽 분자 수'], y: [0, 1, .25, '경우의 수 (최댓값 = 1)']}, {L: half + 48, keep: true}), bw = Math.max(1, (m2.X(1) - m2.X(0)) * .8);
+    for (let k = 0; k <= n; k++) { const v = C2(n, k) / mx; g.fillStyle = k === nLeft() ? C.hot : 'rgba(47,111,208,.45)'; g.fillRect(m2.X(k) - bw / 2, m2.Y(v), bw, m2.Y(0) - m2.Y(v)); } },
+  render(){ const L = nLeft(), n = EN.N; Kit.panel({stats: [[`${L} : ${n - L}`, '왼쪽 : 오른쪽'], [C2(n, L) < 1e6 ? C2(n, L).toLocaleString() : C2(n, L).toExponential(1), '지금 배치의 경우의 수'], [n <= 60 ? `1 / ${(2 ** n).toExponential(1)}` : '거의 0', '모두 왼쪽에 모일 확률']],
+    explain: '<b>비가역 현상</b>: 저절로는 한쪽 방향으로만 일어나는 현상(기체의 확산, 뜨거운 물체에서 차가운 물체로의 열 이동). 분자들이 고르게 퍼진 배치는 경우의 수가 압도적으로 많아서, 저절로 그쪽으로 가요. <b>엔트로피</b>는 가능한 배치(미시 상태)의 수가 많을수록 커요. 고립된 계에서 자연 현상은 엔트로피가 증가하는 방향으로 일어나요.',
+    tip: '분자 4개로 해 보면 다시 한쪽에 모이는 일이 가끔 보여요. 분자 수를 늘리면? 실제 기체 분자 수(10²³개 정도)에서는 사실상 일어나지 않아요.', g: ['시간에 따른 왼쪽 분자 비율 · 배치별 경우의 수', `분자 ${n}개`], t: '분자 4개의 배치와 경우의 수', head: ['왼쪽 : 오른쪽', '4 : 0', '3 : 1', '2 : 2', '1 : 3', '0 : 4'], rows: [['경우의 수', 1, 4, 6, 4, 1]]}); } };
+Kit.$('enN').oninput = e => { EN.N = +e.target.value; Kit.$('enNOut').textContent = EN.N + ' 개'; spawnE(); X.render(); };
+Kit.$('enOpen').onclick = () => { EN.open = true; EN.t = 0; EN.hist = []; X.render(); };
+Kit.$('enReset').onclick = () => { spawnE(); X.render(); };
+Kit.$('enRev').onclick = () => { EN.ps.forEach(p => { p.vx *= -1; p.vy *= -1; }); EN.rev = true; setTimeout(() => EN.rev = false, 2500); };
+Kit.ex(st, {entropy: X});
+}
+Kit.tabs(m => { st.mode = m; if (m === 'kinetic' && !st.parts.length) spawn(); render(); }, ['kinetic', 'cycle']);
+let tick = 0; Kit.loop(dt => { if (st.mode === 'kinetic') stepK(dt); else st.u = (st.u + dt / 12) % 1; }, () => { S.g.fillStyle = C.surface; S.g.fillRect(0, 0, S.w, S.h); if (!draw3DK()) (st.mode === 'kinetic' ? drawKinetic : drawCycle)(); drawGraph(); if (++tick % 30 === 0) render(); });
+setTimeout(spawn, 50);
+})();
+</script>
+</body>
+</html>

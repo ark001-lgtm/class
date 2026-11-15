@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>나의 수업</title>
-<meta name="description" content="소단원마다 만든 전자칠판·아이패드 수업 화면 모음">
-<meta name="theme-color" content="#E8EDF1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0D141B" media="(prefers-color-scheme: dark)">
+<meta name="description" content="소단원마다 만든 전자칠판·아이패드 수업 화면과 시뮬레이션 모음">
+<meta name="theme-color" content="#eef1f4" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d1217" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -21,44 +21,48 @@
 </style>
 </head>
 <body>
-<header class="top">
-  <a class="brand" href="./" aria-label="나의 수업 처음 화면">
-    <img src="icons/icon.svg" alt="" width="48" height="48">
-    <span class="brand-text"><b>나의 수업</b><small id="year-label"></small></span>
-  </a>
-  <label class="search">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5L20.5 20.5"/></svg>
-    <input id="q" type="search" placeholder="소단원 찾기 (예: 열역학)" autocomplete="off" enterkeyhint="search" aria-label="소단원 찾기">
-  </label>
-  <div class="top-tools">
-    <select id="year" class="tbtn" aria-label="학년도 고르기" hidden></select>
-    <button id="btn-theme" class="tbtn" type="button">어두운 화면</button>
-    <button id="btn-full" class="tbtn icon" type="button" aria-label="전체 화면" title="전체 화면">
+<div class="wrap">
+  <nav class="appbar" aria-label="상단">
+    <a class="brand" href="./" aria-label="나의 수업 처음 화면"><img src="icons/icon.svg" alt="" width="30" height="30"><span>나의 수업</span><small id="year-label"></small></a>
+    <span class="spacer"></span>
+    <select id="year" class="btn" aria-label="학년도 고르기" hidden></select>
+    <button id="btn-theme" class="btn" type="button">어두운 화면</button>
+    <button id="btn-full" class="btn icon" type="button" aria-label="전체 화면" title="전체 화면">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fs-in" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><path class="fs-out" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
     </button>
-  </div>
-</header>
-<div class="body">
-  <nav class="side" id="side" aria-label="교과와 과목"></nav>
-  <main class="main" id="main" tabindex="-1"></main>
+  </nav>
+
+  <section class="intro">
+    <h1>오늘 수업, 어디부터 열까요?</h1>
+    <p id="curr"></p>
+    <label class="search" for="q">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="소단원·개념 검색 (예: 포물선, 열역학)" autocomplete="off" enterkeyhint="search" aria-label="소단원 찾기">
+    </label>
+  </section>
+
+  <div class="bar"><div class="seg" role="group" aria-label="과목" id="subjects"></div></div>
+  <div id="notice"></div>
+  <p class="status" id="status" aria-live="polite"></p>
+  <main class="units" id="units"></main>
+  <footer class="site" id="foot"></footer>
 </div>
+
 <dialog id="memo" aria-labelledby="memo-title">
   <div class="memo-head">
     <div><small id="memo-kicker"></small><h2 id="memo-title"></h2></div>
-    <button class="tbtn" type="button" id="memo-close">닫기</button>
+    <button class="btn" type="button" id="memo-close">닫기</button>
   </div>
   <div class="memo-body" id="memo-body"></div>
 </dialog>
 <dialog id="sheet" class="sheet" aria-labelledby="sheet-title">
   <div class="memo-head">
     <div><small id="sheet-kicker"></small><h2 id="sheet-title"></h2></div>
-    <div class="sheet-tools">
-      <button class="tbtn" type="button" id="sheet-close">닫기</button>
-    </div>
+    <div class="sheet-tools"><button class="btn" type="button" id="sheet-close">닫기</button></div>
   </div>
   <div class="sheet-body" id="sheet-body"></div>
 </dialog>
-<div id="update" role="status" hidden>새로 고친 수업 내용이 있습니다. <button class="tbtn" type="button" id="update-go">새로 고침</button></div>
+<div id="update" role="status" hidden>새로 고친 수업 내용이 있습니다. <button class="btn" type="button" id="update-go">새로 고침</button></div>
 <div id="toast" role="status" hidden></div>
 <script id="hub-data" type="application/json">@@HUB_DATA@@</script>
 <script>

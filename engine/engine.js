@@ -244,10 +244,14 @@ function go(i) {
   main.replaceChildren();
   idx = i;
   const sc = SCENES[i];
-  document.getElementById('scene-title').textContent = sc.title;
+  const title = document.getElementById('scene-title');
+  title.textContent = sc.title;
   document.getElementById('kicker').textContent = sc.part || sc.kicker;
   const chip = document.getElementById('ws-chip');
   chip.textContent = sc.ws || ''; chip.hidden = !sc.ws;
+  // 제목이 머리줄에 다 들어가지 않으면 글자를 조금씩 줄인다 (28px 까지, 그래도 길면 … 으로)
+  title.style.fontSize = '';
+  for (let s = 38; title.scrollWidth > title.clientWidth + 1 && s >= 28; s -= 2) title.style.fontSize = s + 'px';
   document.getElementById('count').textContent = (i + 1) + ' / ' + SCENES.length;
   document.getElementById('btn-prev').disabled = i === 0;
   document.getElementById('btn-next').disabled = i === SCENES.length - 1;

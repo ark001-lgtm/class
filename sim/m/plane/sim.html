@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>평면 운동 실험실 · 역학과 에너지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<script src="../../assets/catalog.js"></script>
+<script src="../../assets/simkit.js"></script>
+<script src="../../assets/simex.js"></script>
+<script src="../../assets/lessonbar.js" defer></script>
+</head>
+<body data-root="../../" class="area-phy">
+<div class="wrap">
+  <nav class="topbar" data-topbar="역학과 에너지|01 평면 운동" data-ws="worksheet.html"></nav>
+  <header class="page">
+    <div>
+      <div class="eyebrow"><i class="area-dot"></i>역학과 에너지 · 01 평면 운동 <span class="code">12역학01-02</span><span class="code">12역학01-03</span><span class="code">12역학01-01</span></div>
+      <h1>평면 운동 실험실</h1>
+    </div>
+    <div class="seg" role="group" aria-label="차시 고르기">
+      <button type="button" data-mode="vector">1. 힘의 합성과 운동 예측</button>
+      <button type="button" data-mode="proj">2. 포물선 운동</button>
+      <button type="button" data-mode="circ">3. 등속 원운동</button>
+    </div>
+  </header>
+  <div class="main">
+    <section class="panel scene" aria-label="실험 장치">
+      <div class="canvas-box"><canvas id="scene" aria-label="평면 운동 장면"></canvas></div>
+      <div class="controls">
+        <label class="field" data-only="proj" for="v0">처음 속력 <input type="range" id="v0" min="5" max="30" step="1" value="20"><output id="v0Out">20 m/s</output></label>
+        <label class="field" data-only="proj" for="th">발사 각도 <input type="range" id="th" min="5" max="85" step="5" value="45"><output id="thOut">45°</output></label>
+        <button class="btn primary" type="button" id="fire" data-only="proj">발사</button>
+        <button class="btn" type="button" id="newT" data-only="proj">새 과녁</button>
+        <label class="field" data-only="circ" for="rr">반지름 <input type="range" id="rr" min="0.5" max="2" step="0.25" value="1"><output id="rrOut">1.00 m</output></label>
+        <label class="field" data-only="circ" for="TT">주기 <input type="range" id="TT" min="0.5" max="3" step="0.25" value="1.5"><output id="TTOut">1.50 s</output></label>
+        <label class="field" data-only="circ" for="cm">질량 <input type="range" id="cm" min="0.1" max="1" step="0.1" value="0.2"><output id="cmOut">0.2 kg</output></label>
+        <button class="btn primary" type="button" id="cut" data-only="circ">줄 끊기</button>
+        <div class="field" data-only="vector"><div class="seg" id="vSub"><button type="button" data-vsub="two">두 힘의 합성</button><button type="button" data-vsub="inc">빗면 위 물체</button></div></div>
+        <label class="field" data-only="vector" data-vs="two" for="vf1">F₁ <input type="range" id="vf1" min="0" max="100" step="5" value="60"><output id="vf1Out">60 N</output></label>
+        <label class="field" data-only="vector" data-vs="two" for="va1">F₁ 방향 <input type="range" id="va1" min="-90" max="90" step="5" value="30"><output id="va1Out">30°</output></label>
+        <label class="field" data-only="vector" data-vs="two" for="vf2">F₂ <input type="range" id="vf2" min="0" max="100" step="5" value="60"><output id="vf2Out">60 N</output></label>
+        <label class="field" data-only="vector" data-vs="two" for="va2">F₂ 방향 <input type="range" id="va2" min="-90" max="90" step="5" value="-30"><output id="va2Out">-30°</output></label>
+        <label class="field" data-only="vector" data-vs="inc" for="vth">빗면 경사각 <input type="range" id="vth" min="0" max="60" step="5" value="30"><output id="vthOut">30°</output></label>
+        <label class="field" data-only="vector" data-vs="inc" for="vmu">마찰 계수 <input type="range" id="vmu" min="0" max="0.8" step="0.1" value="0"><output id="vmuOut">0.0</output></label>
+        <button class="btn primary" type="button" id="vgo" data-only="vector">출발</button>
+      </div>
+    </section>
+    <aside class="panel ledger" aria-label="설명"><div class="stats" id="stats"></div><p class="explain" id="explain"></p><p class="note" id="tip"></p></aside>
+  </div>
+  <div class="lower">
+    <section class="panel"><h2 id="gTitle">그래프</h2><p class="sub" id="gSub"></p><div class="graph-box" style="margin-top:8px"><canvas id="graph" aria-label="그래프"></canvas></div></section>
+    <section class="panel"><h2 id="tTitle">정리</h2><div class="tbl-wrap"><table class="data"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div></section>
+  </div>
+  <section aria-label="생각해 보기">
+    <h2 style="margin-bottom:10px">생각해 보기</h2>
+    <div class="think">
+      <details class="q"><summary><span class="qnum">Q1</span>같은 속력으로 던질 때 30°와 60°의 수평 도달 거리가 같은 까닭은?</summary><p>수평 도달 거리 R = v₀²sin2θ/g이고 sin60° = sin120°이므로 두 각도의 R이 같아요. 서로 여각(합이 90°)인 두 각도는 언제나 같은 거리를 날아가요. 단, 60°가 더 높이, 더 오래 날아요.</p></details>
+      <details class="q"><summary><span class="qnum">Q2</span>포물선 운동의 가장 높은 지점에서 속력은 0일까?</summary><p>아니에요. 연직 방향 속도만 0이 되고, 수평 방향 속도 v₀cosθ는 그대로 남아 있어요. 그래서 최고점에서 속력은 v₀cosθ예요.</p></details>
+      <details class="q"><summary><span class="qnum">Q3</span>원운동하던 물체의 줄을 끊으면 어느 방향으로 날아갈까?</summary><p>끊는 순간의 속도 방향, 즉 원의 <b>접선 방향</b>으로 날아가요. 구심력이 사라지면 관성에 따라 그 순간의 속도로 직진하기 때문이에요. 원의 바깥쪽(반지름 방향)으로 튀어 나가지 않아요.</p></details>
+    </div>
+  </section>
+  <footer class="site" data-footer data-extra="g = 9.8 m/s², 공기 저항 무시."></footer>
+</div>
+<script>
+(() => {
+const {C, $, canvas, axes, line, arrow, label} = Kit;
+const S = canvas($('scene')), G = canvas($('graph')), TAU = Math.PI * 2, D = Math.PI / 180, g9 = 9.8;
+const st = {mode: 'proj', v0: 20, th: 45, t: 0, fly: false, trails: [], target: 30, hits: 0, shots: 0, msg: '', r: 1, T: 1.5, m: .2, ct: 0, cut: null};
+/* ===== 1. 포물선 운동 ===== */
+const vx = () => st.v0 * Math.cos(st.th * D), vy0 = () => st.v0 * Math.sin(st.th * D), Tf = () => 2 * vy0() / g9, Rng = () => vx() * Tf(), Hm = () => vy0() * vy0() / (2 * g9);
+const pos = t => [vx() * t, vy0() * t - .5 * g9 * t * t];
+function newTarget(){ st.target = Math.round(12 + Math.random() * 70); st.msg = ''; }
+function drawProj(){ const g = S.g, W = S.w, H = S.h, gy = H * .86, x0 = 40, sc = Math.min((W - 70) / 95, (gy - 30) / 48), X = x => x0 + x * sc, Y = y => gy - y * sc;
+  const sk = g.createLinearGradient(0, 0, 0, gy); sk.addColorStop(0, '#8fc4ec'); sk.addColorStop(1, '#e8f4fb'); g.fillStyle = sk; g.fillRect(0, 0, W, gy);
+  g.fillStyle = '#b6d0ae'; g.beginPath(); g.moveTo(0, gy); for (let x = 0; x <= W; x += 18) g.lineTo(x, gy - 22 - Math.sin(x / 90) * 12 - Math.sin(x / 33) * 4); g.lineTo(W, gy); g.closePath(); g.fill();
+  const gr = g.createLinearGradient(0, gy, 0, H); gr.addColorStop(0, '#79b25e'); gr.addColorStop(1, '#4f8a3e'); g.fillStyle = gr; g.fillRect(0, gy, W, H - gy); g.strokeStyle = 'rgba(40,80,30,.4)'; g.lineWidth = 1; for (let x = 3; x < W; x += 7) { g.beginPath(); g.moveTo(x, gy + 1); g.lineTo(x + 2, gy - 3); g.stroke(); }
+  for (let x = 0; x <= 90; x += 10) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.moveTo(X(x), gy); g.lineTo(X(x), gy + 6); g.stroke(); label(g, x + ' m', X(x), gy + 16, {size: 10, color: '#fff', weight: 600}); }
+  // 과녁
+  const tx = X(st.target); g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(tx, gy + 2, 2.5 * sc + 4, 4, 0, 0, TAU); g.fill(); [[2.5, '#d0392b'], [1.7, '#ffffff'], [1, '#d0392b'], [.35, '#ffffff']].forEach(([r, c]) => { g.fillStyle = c; g.beginPath(); g.ellipse(tx, gy - 1, r * sc, Math.max(2, r * sc * .28), 0, 0, TAU); g.fill(); }); label(g, `과녁 ${st.target} m`, tx, gy - 16, {size: 11, weight: 700, color: C.hot});
+  // 예전 궤적
+  st.trails.forEach((tr, i) => { g.strokeStyle = `rgba(120,130,150,${.15 + .1 * i})`; g.lineWidth = 1.5; g.beginPath(); tr.forEach((p, j) => j ? g.lineTo(X(p[0]), Y(p[1])) : g.moveTo(X(p[0]), Y(p[1]))); g.stroke(); });
+  // 대포
+  g.save(); g.translate(X(0), Y(0)); g.rotate(-st.th * D); const bl = g.createLinearGradient(0, -6, 0, 6); bl.addColorStop(0, '#6b737b'); bl.addColorStop(.4, '#d2d8de'); bl.addColorStop(1, '#2b3036'); g.fillStyle = bl; g.beginPath(); g.moveTo(-6, -7); g.lineTo(30, -5); g.lineTo(30, 5); g.lineTo(-6, 7); g.closePath(); g.fill(); g.fillStyle = '#2b3036'; g.fillRect(28, -6, 4, 12); g.restore();
+  if (!st.fly) { const p = projGeo(), on = projDrag.hover != null || projDrag.active != null; arrow(g, p.ox, p.oy, p.tx, p.ty, C.phy, on ? 3.5 : 2.5); g.strokeStyle = C.phy; g.lineWidth = on ? 3 : 2; g.beginPath(); g.arc(p.tx, p.ty, on ? 11 : 9, 0, TAU); g.stroke(); label(g, `처음 속도 ${st.v0} m/s · ${st.th}°`, p.tx + 14, p.ty - 12, {size: 11, weight: 700, color: C.phy, align: 'left'}); }   /* 처음 속도 화살표(끌어서 각도·속력) */
+  g.fillStyle = '#8a5a2c'; g.beginPath(); g.moveTo(X(0) - 12, Y(0) + 2); g.lineTo(X(0) + 10, Y(0) + 2); g.lineTo(X(0) + 4, Y(0) - 6); g.closePath(); g.fill(); g.strokeStyle = '#5a3a1c'; g.lineWidth = 2.5; g.beginPath(); g.arc(X(0) - 2, Y(0) - 1, 7, 0, TAU); g.stroke(); g.lineWidth = 1; for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; g.beginPath(); g.moveTo(X(0) - 2, Y(0) - 1); g.lineTo(X(0) - 2 + Math.cos(a) * 7, Y(0) - 1 + Math.sin(a) * 7); g.stroke(); }
+  if (st.fly || st.t > 0) { const t = Math.min(st.t, Tf()), [x, y] = pos(t); g.strokeStyle = C.accent; g.lineWidth = 2.5; g.beginPath(); for (let u = 0; u <= t; u += .02) { const [a, b] = pos(u); u ? g.lineTo(X(a), Y(b)) : g.moveTo(X(a), Y(b)); } g.lineTo(X(x), Y(y)); g.stroke();
+    // 일정 시간 간격 점 (스트로보)
+    for (let u = 0; u <= t; u += .5) { const [a, b] = pos(u); g.fillStyle = C.muted; g.beginPath(); g.arc(X(a), Y(b), 2.5, 0, TAU); g.fill(); g.strokeStyle = 'rgba(120,130,150,.35)'; g.setLineDash([2, 3]); g.beginPath(); g.moveTo(X(a), Y(b)); g.lineTo(X(a), gy); g.moveTo(X(a), Y(b)); g.lineTo(X(0) - 6, Y(b)); g.stroke(); g.setLineDash([]); }
+    const bb = g.createRadialGradient(X(x) - 2.5, Y(y) - 2.5, 1, X(x), Y(y), 7); bb.addColorStop(0, '#d8dde2'); bb.addColorStop(1, '#22272c'); g.fillStyle = bb; g.beginPath(); g.arc(X(x), Y(y), 7, 0, TAU); g.fill();
+    const vyy = vy0() - g9 * t, k = 2.2; arrow(g, X(x), Y(y), X(x) + vx() * k, Y(y), C.phy, 2.5); arrow(g, X(x), Y(y), X(x), Y(y) - vyy * k, C.bio, 2.5); label(g, 'vₓ', X(x) + vx() * k + 10, Y(y), {size: 11, weight: 700, color: C.phy}); if (Math.abs(vyy) > 1) label(g, 'v_y', X(x) + 14, Y(y) - vyy * k, {size: 11, weight: 700, color: C.bio}); }
+  label(g, `명중 ${st.hits} / 발사 ${st.shots}`, W - 14, 18, {size: 13, weight: 700, align: 'right'}); if (st.msg) label(g, st.msg, W / 2, H * .2, {size: 18, weight: 700, color: st.msg.startsWith('명중') ? C.bio : C.hot});
+  label(g, '점: 0.5초 간격 — 수평 간격은 일정, 연직 간격은 변한다', 14, 18, {size: 10, color: C.muted, align: 'left'}); }
+function stepProj(dt){ if (!st.fly) return; st.t += dt * 1.2; if (st.t >= Tf()) { st.t = Tf(); st.fly = false; const R = Rng(), ok = Math.abs(R - st.target) <= 2.5; st.shots++; if (ok) st.hits++; st.msg = ok ? `명중! (${R.toFixed(1)} m)` : `${R.toFixed(1)} m — ${R < st.target ? '짧아요' : '길어요'} (${Math.abs(R - st.target).toFixed(1)} m 차이)`; const tr = []; for (let u = 0; u <= Tf() + 1e-9; u += Tf() / 60) tr.push(pos(u)); st.trails.push(tr); if (st.trails.length > 4) st.trails.shift(); render(); } }
+/* ===== 2. 등속 원운동 ===== */
+const om = () => TAU / st.T, cv = () => om() * st.r, ca = () => cv() * cv() / st.r, cF = () => st.m * ca();
+function drawCirc(){ const g = S.g, W = S.w, H = S.h, cx = W * .4, cy = H * .5, sc = Math.min(W, H) * .2, R = st.r * sc;
+  // 위에서 본 공기 부상 테이블(마찰이 거의 없음)
+  const tb = g.createLinearGradient(0, 0, W, H); tb.addColorStop(0, '#4c6a86'); tb.addColorStop(1, '#2c4258'); g.fillStyle = tb; g.fillRect(0, 0, W, H); g.fillStyle = 'rgba(255,255,255,.12)'; for (let yy = 12; yy < H; yy += 16) for (let xx = 12; xx < W; xx += 16) g.fillRect(xx, yy, 1.6, 1.6);
+  g.strokeStyle = 'rgba(255,255,255,.35)'; g.setLineDash([4, 4]); g.beginPath(); g.arc(cx, cy, R, 0, TAU); g.stroke(); g.setLineDash([]); const pin = g.createRadialGradient(cx - 2, cy - 2, 1, cx, cy, 7); pin.addColorStop(0, '#fff'); pin.addColorStop(1, '#6b747d'); g.fillStyle = pin; g.beginPath(); g.arc(cx, cy, 7, 0, TAU); g.fill();
+  label(g, '위에서 본 모습 · 공기 부상 테이블', 14, 18, {size: 11, color: '#dfe7ee', align: 'left'});
+  if (typeof rDrag !== 'undefined' && (rDrag.hover ?? rDrag.active) != null) { g.strokeStyle = '#fff'; g.lineWidth = 6; g.globalAlpha = .25; g.beginPath(); g.arc(cx, cy, R, 0, TAU); g.stroke(); g.globalAlpha = 1; }
+  const puck = (x, y) => { g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(x + 3, y + 4, 12, 0, TAU); g.fill(); const pg = g.createRadialGradient(x - 4, y - 4, 1, x, y, 12); pg.addColorStop(0, '#ffd27a'); pg.addColorStop(1, '#c0611c'); g.fillStyle = pg; g.beginPath(); g.arc(x, y, 12, 0, TAU); g.fill(); g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 1; g.beginPath(); g.arc(x, y, 7, 0, TAU); g.stroke(); };
+  if (!st.cut) { const a = om() * st.ct, x = cx + R * Math.cos(a), y = cy - R * Math.sin(a); g.strokeStyle = '#f0f2f4'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(cx, cy); g.lineTo(x, y); g.stroke();
+    const vs = 14 + cv() * 6, as = 10 + ca() * .9; arrow(g, x, y, x - Math.sin(a) * vs, y - Math.cos(a) * vs, C.phy, 3); arrow(g, x, y, x + (cx - x) / R * Math.min(R - 6, as), y + (cy - y) / R * Math.min(R - 6, as), C.hot, 3);
+    label(g, 'v', x - Math.sin(a) * (vs + 12), y - Math.cos(a) * (vs + 12), {size: 13, weight: 700, color: '#9cc4ff'}); puck(x, y); }
+  else { const {x0, y0, a, tt} = st.cut, vx = -Math.sin(a), vy = -Math.cos(a), d = cv() * sc * tt, x = x0 + vx * d, y = y0 + vy * d; g.strokeStyle = C.accent; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(x0, y0); g.lineTo(x, y); g.stroke(); g.setLineDash([]); puck(x, y); label(g, '줄이 끊기면 접선 방향으로 등속 직선 운동', cx, H - 18, {size: 13, weight: 700, color: '#ffd27a'}); if (x < -20 || x > W + 20 || y < -20 || y > H + 20) st.cut = null; }
+  const rx = W * .82; label(g, '파랑: 속도 (접선 방향)', rx, H * .14, {size: 11, color: '#9cc4ff', weight: 700}); label(g, '빨강: 구심 가속도 (중심 방향)', rx, H * .14 + 20, {size: 11, color: '#ff9a8a', weight: 700}); label(g, `v = 2πr/T = ${cv().toFixed(2)} m/s`, rx, H * .14 + 52, {size: 13, weight: 700, color: '#fff'}); label(g, `a = v²/r = ${ca().toFixed(2)} m/s²`, rx, H * .14 + 74, {size: 13, weight: 700, color: '#fff'}); label(g, `F = ma = ${cF().toFixed(2)} N`, rx, H * .14 + 96, {size: 13, weight: 700, color: '#ffd27a'}); }
+/* ===== 그래프·표 ===== */
+function drawGraph(){ const g = G.g;
+  if (st.mode === 'proj') { const m = axes(G, {x: [0, 90, 15, '발사 각도 (°)'], y: [0, 100, 20, '수평 도달 거리 (m)']}); const P = []; for (let a = 0; a <= 90; a++) P.push([a, Math.min(100, st.v0 * st.v0 * Math.sin(2 * a * D) / g9)]); line(G, P, m, C.accent, 2.5); g.strokeStyle = C.hot; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(m.X(0), m.Y(st.target)); g.lineTo(m.X(90), m.Y(st.target)); g.stroke(); g.setLineDash([]); label(g, '과녁 거리', m.X(88), m.Y(st.target) - 9, {size: 10, color: C.hot, align: 'right'}); g.fillStyle = C.hot; g.beginPath(); g.arc(m.X(st.th), m.Y(Math.min(100, Rng())), 5, 0, TAU); g.fill(); }
+  else { const m = axes(G, {x: [0.5, 3, .5, '주기 T (s)'], y: [0, 160, 40, '구심 가속도 (m/s²)']}); const P = []; for (let T = .5; T <= 3; T += .02) P.push([T, Math.min(160, TAU * TAU * st.r / (T * T))]); line(G, P, m, C.hot, 2.5); g.fillStyle = C.accent; g.beginPath(); g.arc(m.X(st.T), m.Y(Math.min(160, ca())), 5, 0, TAU); g.fill(); label(g, 'a = 4π²r/T² — 주기가 2배면 가속도는 1/4', m.X(2), m.Y(120), {size: 10, color: C.muted}); } }
+function render(){ const s = $('stats'), th = $('thead'), tb = $('tbody'), set = (gt, gs, tt) => { $('gTitle').textContent = gt; $('gSub').textContent = gs; $('tTitle').textContent = tt; };
+  if (st.mode === 'proj') { s.innerHTML = `<div><b>${Rng().toFixed(1)} m</b><span>수평 도달 거리</span></div><div><b>${Hm().toFixed(1)} m</b><span>최고점 높이</span></div><div><b>${Tf().toFixed(2)} s</b><span>체공 시간</span></div><div><b>${vx().toFixed(1)} m/s</b><span>수평 속도 (일정)</span></div>`;
+    $('explain').innerHTML = '<b>포물선 운동</b>은 두 운동의 합성이에요. 수평 방향은 힘이 없어 <b>등속 운동</b>(vₓ = v₀cosθ), 연직 방향은 중력 때문에 <b>등가속도 운동</b>(v_y = v₀sinθ − gt). 최고점 높이 H = v₀²sin²θ/2g, 도달 거리 R = v₀²sin2θ/g.'; $('tip').textContent = '과녁 맞히기: 각도와 속력을 정해 [발사]! 과녁 중심에서 ±2.5 m 안에 떨어지면 명중이에요. 계산으로 먼저 예측해 보세요.';
+    th.innerHTML = '<tr><th>각도</th><th>도달 거리 (m)</th><th>최고 높이 (m)</th></tr>'; tb.innerHTML = [15, 30, 45, 60, 75].map(a => `<tr><td>${a}°</td><td>${(st.v0 * st.v0 * Math.sin(2 * a * D) / g9).toFixed(1)}</td><td>${((st.v0 * Math.sin(a * D)) ** 2 / (2 * g9)).toFixed(1)}</td></tr>`).join(''); set('발사 각도와 도달 거리', `처음 속력 ${st.v0} m/s`, `발사 각도에 따른 결과 (v₀ = ${st.v0} m/s)`); }
+  else { s.innerHTML = `<div><b>${cv().toFixed(2)} m/s</b><span>속력</span></div><div><b>${om().toFixed(2)} rad/s</b><span>각속도 ω</span></div><div><b>${ca().toFixed(2)} m/s²</b><span>구심 가속도</span></div><div><b>${cF().toFixed(2)} N</b><span>구심력</span></div>`;
+    $('explain').innerHTML = '<b>등속 원운동</b>: 속력은 일정하지만 속도의 <b>방향</b>이 계속 바뀌므로 가속도 운동이에요. 가속도는 항상 원의 중심을 향하며(구심 가속도) a = v²/r = rω². 이 가속도를 만드는 알짜힘이 <b>구심력</b> F = mv²/r이에요.'; $('tip').textContent = '구심력은 새로운 종류의 힘이 아니라 장력·마찰력·중력 등이 그 역할을 하는 거예요. 자동차가 커브를 돌 때는 마찰력이 구심력이에요.';
+    th.innerHTML = '<tr><th>주기 (s)</th><th>속력 (m/s)</th><th>구심력 (N)</th></tr>'; tb.innerHTML = [.5, 1, 1.5, 2, 3].map(T => { const v = TAU * st.r / T; return `<tr><td>${T}</td><td>${v.toFixed(2)}</td><td>${(st.m * v * v / st.r).toFixed(2)}</td></tr>`; }).join(''); set('주기와 구심 가속도', `반지름 ${st.r.toFixed(2)} m`, `주기에 따른 구심력 (r = ${st.r.toFixed(2)} m, m = ${st.m} kg)`); } }
+const bind = (id, k, f) => { $(id).oninput = e => { st[k] = +e.target.value; $(id + 'Out').textContent = f(st[k]); if (st.mode === 'proj') { st.fly = false; st.t = 0; st.msg = ''; } render(); }; };
+bind('v0', 'v0', v => v + ' m/s'); bind('th', 'th', v => v + '°'); bind('rr', 'r', v => v.toFixed(2) + ' m'); bind('TT', 'T', v => v.toFixed(2) + ' s'); bind('cm', 'm', v => v.toFixed(1) + ' kg');
+Kit.act($('fire'), {go: () => { st.t = 0; st.fly = true; st.msg = ''; }, busy: () => st.fly, resume: '다시 날아가기'}); $('newT').onclick = () => { newTarget(); render(); };
+// 끌기(포물선 운동): 대포 앞 처음 속도 화살표의 끝을 끌면 방향 = 발사 각도(5° 눈금), 길이 = 처음 속력(1 m/s 눈금). 날아가는 동안은 잡히지 않음
+const projGeo = () => { const W = S.w, H = S.h, gy = H * .86, sc = Math.min((W - 70) / 95, (gy - 30) / 48), ox = 40, oy = gy, L = st.v0 * 5; return {ox, oy, tx: ox + Math.cos(st.th * D) * L, ty: oy - Math.sin(st.th * D) * L}; };
+const projDrag = Kit.grab(S.cv, {hit: (x, y) => { if (st.mode !== 'proj' || st.fly) return null; const p = projGeo(); return Math.hypot(x - p.tx, y - p.ty) < 22 ? 0 : null; },
+  move: (i, x, y) => { const p = projGeo(), dx = x - p.ox, dy = p.oy - y; Kit.setRange('th', Math.atan2(Math.max(0, dy), Math.max(.01, dx)) / D); Kit.setRange('v0', Math.hypot(dx, dy) / 5); }});
+$('cut').onclick = () => { if (st.cut) return; const W = S.w, H = S.h, cx = W * .4, cy = H * .5, R = st.r * Math.min(W, H) * .2, a = om() * st.ct; st.cut = {x0: cx + R * Math.cos(a), y0: cy - R * Math.sin(a), a, tt: 0}; };
+/* ===== 1. 힘의 합성과 운동 예측 (새 모드) ===== */
+{
+const VX = {sub: 'two', f1: 60, a1: 30, f2: 60, a2: -30, m: 20, th: 30, mu: 0, t: 0, run: false};
+const D = Math.PI / 180, g9 = 9.8;
+const res = () => { const x = VX.f1 * Math.cos(VX.a1 * D) + VX.f2 * Math.cos(VX.a2 * D), y = VX.f1 * Math.sin(VX.a1 * D) + VX.f2 * Math.sin(VX.a2 * D); return [x, y, Math.hypot(x, y), Math.atan2(y, x) / D]; };
+const inc = () => { const W = VX.m * g9, along = W * Math.sin(VX.th * D), N = W * Math.cos(VX.th * D), fmax = VX.mu * N, net = Math.max(0, along - fmax); return {W, along, N, fr: Math.min(along, fmax), net, a: net / VX.m}; };
+const bindV = (id, k, f) => { Kit.$(id).oninput = e => { VX[k] = +e.target.value; Kit.$(id + 'Out').textContent = f(VX[k]); VX.t = 0; VX.run = false; X.render(); }; };
+const X = {
+  enter(){ VX.t = 0; VX.run = false; subUI(); },
+  step(dt){ if (VX.run) { VX.t += dt; if (VX.t > 3) VX.run = false; } },
+  draw(){ const g = S.g, W = S.w, H = S.h; g.fillStyle = C.surface; g.fillRect(0, 0, W, H);
+    if (VX.sub === 'two') {
+      const [rx, ry, R, ra] = res(), a = R / VX.m, ppm = Math.min(14, W * .22 / Math.max(1, .5 * a * 9)), sh = .5 * a * VX.t * VX.t * ppm,   /* 1 m 당 픽셀: 3초 동안 간 거리가 화면의 22 % 안에 들게(앞쪽 힘 화살표·사람까지 화면 안) */ cx = W * (W < 600 ? .28 : .38) + Math.cos(ra * D) * sh, cy = H * .55 - Math.sin(ra * D) * sh, k = Math.min(W, H) / 260;
+      /* 빙판(마찰 거의 없음)을 위에서 본 모습 + 줄을 당기는 두 사람 */ const ice = g.createLinearGradient(0, 0, W, H); ice.addColorStop(0, '#e6f3fb'); ice.addColorStop(1, '#cfe6f4'); g.fillStyle = ice; g.fillRect(0, 0, W, H);
+      g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1; for (let i = 0; i < 26; i++) { const x = (i * 97) % W, y = (i * 53) % H; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 40, y + 6, x + 90, y - 4); g.stroke(); }
+      g.strokeStyle = 'rgba(70,120,170,.12)'; for (let x = 0; x < W; x += 30) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); } for (let y = 0; y < H; y += 30) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+      [[VX.f1, VX.a1, '#2f6fd0'], [VX.f2, VX.a2, '#2f8f4f']].forEach(([f, ang, col]) => { if (f <= 0) return; const ux = Math.cos(ang * D), uy = -Math.sin(ang * D), L2 = f * k + 74, hx = cx + ux * L2, hy = cy + uy * L2; g.strokeStyle = '#a8865a'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx + ux * 26, cy + uy * 16); g.lineTo(hx - ux * 12, hy - uy * 12); g.stroke();
+        g.save(); g.translate(hx, hy); g.rotate(Math.atan2(uy, ux)); g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(4, 3, 16, 12, 0, 0, TAU); g.fill(); g.fillStyle = col; g.beginPath(); g.ellipse(2, 0, 10, 15, 0, 0, TAU); g.fill(); g.fillStyle = '#f0c8a8'; g.beginPath(); g.arc(6, 0, 7, 0, TAU); g.fill(); g.fillStyle = '#3a2a1a'; g.beginPath(); g.arc(8, 0, 6, -Math.PI / 2, Math.PI / 2); g.fill(); g.restore(); });
+      const p1 = [cx + VX.f1 * Math.cos(VX.a1 * D) * k, cy - VX.f1 * Math.sin(VX.a1 * D) * k], p2 = [cx + VX.f2 * Math.cos(VX.a2 * D) * k, cy - VX.f2 * Math.sin(VX.a2 * D) * k], pr = [cx + rx * k, cy - ry * k];
+      g.setLineDash([5, 4]); g.strokeStyle = C.muted; g.beginPath(); g.moveTo(...p1); g.lineTo(...pr); g.lineTo(...p2); g.stroke(); g.setLineDash([]);
+      g.fillStyle = 'rgba(0,0,0,.15)'; g.fillRect(cx - 24, cy - 13, 54, 34); g.fillStyle = '#c98a2a'; g.fillRect(cx - 27, cy - 17, 54, 34); g.strokeStyle = '#8a5a1e'; g.lineWidth = 1.5; for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(cx - 27, cy - 17 + i * 8.5); g.lineTo(cx + 27, cy - 17 + i * 8.5); g.stroke(); } g.strokeRect(cx - 27, cy - 17, 54, 34); label(g, `${VX.m} kg`, cx, cy, {size: 11, weight: 700, color: '#fff'});
+      arrow(g, cx, cy, ...p1, C.phy, 3); arrow(g, cx, cy, ...p2, C.bio, 3); if (R > .5) arrow(g, cx, cy, ...pr, C.hot, 4);
+      if (VX.t === 0) { const hv = typeof vecDrag !== 'undefined' ? vecDrag.hover ?? vecDrag.active : null; [[p1, C.phy], [p2, C.bio]].forEach(([q, col], i) => { g.strokeStyle = col; g.lineWidth = 2; g.beginPath(); g.arc(q[0], q[1], 9, 0, TAU); g.stroke(); if (hv === i) { g.setLineDash([4, 3]); g.lineWidth = 1.5; g.beginPath(); g.arc(q[0], q[1], 15, 0, TAU); g.stroke(); g.setLineDash([]); } }); }
+      [[p1, `F₁ ${VX.f1} N`, C.phy, -1], [p2, `F₂ ${VX.f2} N`, C.bio, 1]].forEach(([p, t, c, sd]) => { const mx = (cx + p[0]) / 2, my = (cy + p[1]) / 2, dx = p[0] - cx, dy = p[1] - cy, dl = Math.hypot(dx, dy) || 1, nx = -dy / dl, ny = dx / dl, sg = (ny * sd > 0 ? 1 : -1); label(g, t, mx + nx * 16 * sg, my + ny * 16 * sg, {size: 12, weight: 700, color: c}); });
+      if (R > .5) { const out = pr[0] + 100 > W; label(g, `합력 ${R.toFixed(1)} N`, out ? pr[0] - 4 : pr[0] + 8, out ? pr[1] - 16 : pr[1], {size: 13, weight: 700, color: C.hot, align: out ? 'right' : 'left'}); }   /* 오른쪽 자리가 모자라면 화살표 끝 위로 */
+      label(g, '평행사변형의 대각선 = 합력 · [출발]을 누르면 합력 방향으로 가속 (빙판, 위에서 본 모습)', W / 2, 18, {size: 11, color: '#41566b'});
+      if (VX.t > 0) label(g, `t = ${VX.t.toFixed(1)} s · 이동 거리 ${(.5 * a * VX.t * VX.t).toFixed(2)} m`, W / 2, H - 16, {size: 12, weight: 700});
+    } else {
+      const I = inc(), th = VX.th * D, L = Math.min(W * .7, H * 1.1), x0 = W * .12, y0 = H * .86, x1 = x0 + L * Math.cos(th), y1 = y0 - L * Math.sin(th);
+      g.fillStyle = C.soft; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y0); g.lineTo(x1, y1); g.closePath(); g.fill(); g.strokeStyle = C.line; g.stroke(); label(g, `${VX.th}°`, x0 + 46, y0 - 12, {size: 12});
+      const s = .5 * I.a * VX.t * VX.t, u = Math.max(.12, .62 - s / 6), bx = x0 + (x1 - x0) * u, by = y0 + (y1 - y0) * u, nx = -Math.sin(th), ny = -Math.cos(th), cx = bx + nx * 20, cy = by + ny * 20, k = Math.min(W, H) / 900;
+      g.save(); g.translate(cx, cy); g.rotate(-th); g.fillStyle = '#4a7fd6'; g.fillRect(-24, -20, 48, 40); g.restore();
+      const dn = [Math.cos(th), -Math.sin(th)], up = [-dn[0], -dn[1]];
+      arrow(g, cx, cy, cx, cy + I.W * k, C.ink, 3); label(g, `중력 ${I.W.toFixed(0)} N`, cx + 8, cy + I.W * k + 12, {size: 11, weight: 700, align: 'left'});
+      arrow(g, cx, cy, cx - dn[0] * I.along * k, cy - dn[1] * I.along * k, C.hot, 2.5); label(g, `빗면 방향 ${I.along.toFixed(0)} N`, cx - dn[0] * I.along * k - 6, cy - dn[1] * I.along * k + 14, {size: 11, color: C.hot, weight: 700, align: 'right'});
+      arrow(g, cx, cy, cx + nx * I.N * k, cy + ny * I.N * k, C.phy, 2.5); label(g, `수직 항력 ${I.N.toFixed(0)} N`, cx + nx * I.N * k + 6, cy + ny * I.N * k - 8, {size: 11, color: C.phy, weight: 700, align: 'left'});
+      g.setLineDash([4, 4]); g.strokeStyle = C.muted; g.beginPath(); g.moveTo(cx, cy); g.lineTo(cx - nx * I.N * k, cy - ny * I.N * k); g.lineTo(cx, cy + I.W * k); g.stroke(); g.setLineDash([]);
+      if (I.fr > 0) arrow(g, cx, cy, cx + dn[0] * I.fr * k, cy + dn[1] * I.fr * k, C.bio, 2.5);
+      if (I.fr > 0) label(g, `마찰력 ${I.fr.toFixed(0)} N`, cx + dn[0] * I.fr * k + 8, cy + dn[1] * I.fr * k - 10, {size: 11, color: C.bio, weight: 700, align: 'left'});
+      label(g, '점선: 중력을 빗면 방향과 빗면에 수직인 방향으로 분해', W / 2, 18, {size: 11, color: C.muted});
+      label(g, I.a > 0 ? `가속도 ${I.a.toFixed(2)} m/s² (빗면 아래 방향)` : '정지 (마찰력과 평형)', W * .72, 44, {size: 14, weight: 700, color: C.accent}); }
+    this.graph(); },
+  graph(){ const g = G.g;
+    if (VX.sub === 'two') { const m = axes(G, {x: [0, 180, 30, '두 힘 사이의 각 (°)'], y: [0, 200, 50, '합력 크기 (N)']}), P = []; for (let a = 0; a <= 180; a += 2) P.push([a, Math.sqrt(VX.f1 ** 2 + VX.f2 ** 2 + 2 * VX.f1 * VX.f2 * Math.cos(a * D))]); line(G, P, m, C.accent, 2.5); const ang = Math.abs(VX.a1 - VX.a2) > 180 ? 360 - Math.abs(VX.a1 - VX.a2) : Math.abs(VX.a1 - VX.a2); g.fillStyle = C.hot; g.beginPath(); g.arc(m.X(ang), m.Y(res()[2]), 5, 0, TAU); g.fill(); label(g, '사이각이 클수록 합력은 작아진다', m.X(120), m.Y(185), {size: 10, color: C.muted}); }
+    else { const m = axes(G, {x: [0, 60, 10, '빗면의 경사각 (°)'], y: [0, 10, 2, '가속도 (m/s²)']}), P = []; for (let a = 0; a <= 60; a += 1) P.push([a, Math.max(0, g9 * (Math.sin(a * D) - VX.mu * Math.cos(a * D)))]); line(G, P, m, C.accent, 2.5); g.fillStyle = C.hot; g.beginPath(); g.arc(m.X(VX.th), m.Y(inc().a), 5, 0, TAU); g.fill(); } },
+  render(){ if (VX.sub === 'two') { const [rx, ry, R, ra] = res(), c1 = [VX.f1 * Math.cos(VX.a1 * D), VX.f1 * Math.sin(VX.a1 * D)], c2 = [VX.f2 * Math.cos(VX.a2 * D), VX.f2 * Math.sin(VX.a2 * D)];
+      Kit.panel({stats: [[`${R.toFixed(1)} N`, '합력의 크기'], [`${ra.toFixed(0)}°`, '합력의 방향 (앞쪽 기준)'], [`${(R / VX.m).toFixed(2)} m/s²`, '가속도 = 합력 ÷ 질량']], explain: '<b>힘의 합성</b>: 한 물체에 여러 힘이 작용하면 그 효과는 <b>합력</b> 하나와 같아요. 두 힘을 두 변으로 하는 평행사변형의 대각선이 합력이에요. 성분으로 나누어 더해도 같아요: 합력의 x 성분 = 각 힘의 x 성분의 합.', tip: '두 힘의 크기는 그대로 두고 사이각만 바꿔 보세요. 같은 방향(0°)이면 합력이 가장 크고, 반대 방향(180°)이면 가장 작아요.', g: ['사이각에 따른 합력 크기', `F₁ = ${VX.f1} N, F₂ = ${VX.f2} N`], t: '성분으로 더하기', head: ['힘', 'x 성분 (N)', 'y 성분 (N)'], rows: [['F₁', c1[0].toFixed(1), c1[1].toFixed(1)], ['F₂', c2[0].toFixed(1), c2[1].toFixed(1)], ['<b>합력</b>', `<b>${rx.toFixed(1)}</b>`, `<b>${ry.toFixed(1)}</b>`]]}); }
+    else { const I = inc(); Kit.panel({stats: [[`${I.along.toFixed(1)} N`, '빗면 방향 성분 mg sin θ'], [`${I.N.toFixed(1)} N`, '수직 항력 = mg cos θ'], [`${I.a.toFixed(2)} m/s²`, '가속도']], explain: '<b>빗면 위의 물체</b>: 중력을 빗면 방향(mg sin θ)과 빗면에 수직인 방향(mg cos θ)으로 분해해요. 수직 방향은 수직 항력과 평형을 이루고, 빗면 방향의 알짜힘이 물체를 가속시켜요: a = (mg sin θ − 마찰력) / m.', tip: '마찰 계수를 0으로 두면 가속도는 g sin θ — 질량과 상관없어요. 마찰이 있으면 경사가 작을 때는 미끄러지지 않아요.', g: ['경사각에 따른 가속도', `마찰 계수 ${VX.mu}`], t: '중력의 분해', head: ['경사각', 'mg sin θ (N)', 'mg cos θ (N)'], rows: [15, 30, 45, 60].map(a => [a + '°', (VX.m * g9 * Math.sin(a * D)).toFixed(0), (VX.m * g9 * Math.cos(a * D)).toFixed(0)])}); } } };
+// 끌기(등속 원운동): 원 궤도(점선) 아무 곳이나 잡고 안팎으로 끌어 반지름 바꾸기
+const rDrag = Kit.grab(S.cv, {hit: (x, y) => { if (st.mode !== 'circ') return null; const sc = Math.min(S.w, S.h) * .2; return Math.abs(Math.hypot(x - S.w * .4, y - S.h * .5) - st.r * sc) < 16 ? 0 : null; },
+  move: (i, x, y) => Kit.setRange('rr', Math.hypot(x - S.w * .4, y - S.h * .5) / (Math.min(S.w, S.h) * .2))});
+// 끌기(두 힘의 합성): 움직이기 전 F₁·F₂ 화살표 끝을 끌어 크기·방향 바꾸기
+const vecGeo = () => ({cx: S.w * (S.w < 600 ? .28 : .38), cy: S.h * .55, k: Math.min(S.w, S.h) / 260});
+const vecDrag = Kit.grab(S.cv, {hit: (x, y) => { if (st.mode !== 'vector' || VX.sub !== 'two' || VX.t !== 0) return null; const p = vecGeo(); let r = null; [[VX.f1, VX.a1], [VX.f2, VX.a2]].forEach(([f, a], i) => { if (Math.hypot(x - p.cx - f * Math.cos(a * D) * p.k, y - p.cy + f * Math.sin(a * D) * p.k) < 22) r = i; }); return r; },
+  move: (i, x, y) => { const p = vecGeo(), dx = x - p.cx, dy = p.cy - y; Kit.setRange(i ? 'vf2' : 'vf1', Math.hypot(dx, dy) / p.k); Kit.setRange(i ? 'va2' : 'va1', Math.atan2(dy, Math.max(0, dx)) / D); }});
+const subUI = () => document.querySelectorAll('[data-vs]').forEach(el => el.hidden = st.mode !== 'vector' || el.dataset.vs !== VX.sub);
+Kit.seg(Kit.$('vSub'), 'vsub', v => { VX.sub = v; VX.t = 0; VX.run = false; subUI(); X.render(); })('two');
+bindV('vf1', 'f1', v => v + ' N'); bindV('va1', 'a1', v => v + '°'); bindV('vf2', 'f2', v => v + ' N'); bindV('va2', 'a2', v => v + '°'); bindV('vth', 'th', v => v + '°'); bindV('vmu', 'mu', v => v.toFixed(1));
+Kit.act(Kit.$('vgo'), {go: () => { VX.t = 0; VX.run = true; }, busy: () => VX.run, resume: '다시 움직이기'});
+Kit.ex(st, {vector: X});
+}
+newTarget(); Kit.tabs(m => { st.mode = m; render(); }, ['proj', 'circ']);
+Kit.loop(dt => { stepProj(dt); st.ct += dt; if (st.cut) st.cut.tt += dt; }, () => { S.g.fillStyle = C.surface; S.g.fillRect(0, 0, S.w, S.h); (st.mode === 'proj' ? drawProj : drawCirc)(); drawGraph(); });
+})();
+</script>
+</body>
+</html>

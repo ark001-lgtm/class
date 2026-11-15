@@ -5,7 +5,7 @@ const P1 = '1 포물선 운동의 분해', P2 = '2 공식 유도와 역학적 �
 const SCENE_LIST = [
   { id: 'split', part: P1, title: '수평 방향과 연직 방향은 독립', ws: '학습지 1 ①② [표 1] ③④⑤', make: sceneSplit },
   { id: 'path', part: P2, title: '포물선 운동의 궤도', ws: '학습지 2-(1) ⑥⑦⑧', make: scenePath },
-  { id: 'range', part: P2, title: '최고점 · 도달 거리 · 역학적 에너지', ws: '학습지 2-(2)(3) ⑨~⑫', make: sceneRange },
+  { id: 'range', part: P2, title: '최고점 · 도달 거리 · 에너지', ws: '학습지 2-(2)(3) ⑨~⑫', make: sceneRange },
   { id: 'mis', part: P2, title: '주의', ws: '주의 1 · 2', make: sceneMis },
   { id: 'ex', part: '3 예제', title: '예제', ws: '학습지 3 예제 ⑬⑭', make: sceneEx },
 ];

@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>천체의 운동 실험실 · 역학과 에너지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<script src="../../assets/catalog.js"></script>
+<script src="../../assets/simkit.js"></script>
+<script src="../../assets/simex.js"></script>
+<script src="../../assets/vendor/three.min.js"></script>
+<script src="../../assets/sim3d.js"></script>
+<script src="../../assets/lessonbar.js" defer></script>
+</head>
+<body data-root="../../" class="area-phy">
+<div class="wrap">
+  <nav class="topbar" data-topbar="역학과 에너지|02 천체의 운동" data-ws="worksheet.html"></nav>
+  <header class="page">
+    <div>
+      <div class="eyebrow"><i class="area-dot"></i>역학과 에너지 · 02 천체의 운동 <span class="code">12역학01-04</span><span class="code">12역학01-05</span><span class="code">12역학01-06</span></div>
+      <h1>천체의 운동 실험실</h1>
+    </div>
+    <div class="seg" role="group" aria-label="차시 고르기">
+      <button type="button" data-mode="kepler">1. 케플러 법칙</button>
+      <button type="button" data-mode="sat">2. 만유인력과 인공위성</button>
+      <button type="button" data-mode="equiv">3. 등가 원리와 휘어진 시공간</button>
+    </div>
+  </header>
+  <div class="main">
+    <section class="panel scene" aria-label="실험 장치">
+      <div class="canvas-box"><canvas id="scene" aria-label="천체 운동 장면"></canvas></div>
+      <div class="controls">
+        <label class="field" data-only="kepler" for="ec">궤도 모양 <input type="range" id="ec" min="0" max="0.8" step="0.05" value="0.5"><output id="ecOut">타원</output></label>
+        <label class="field" data-only="kepler" for="sa">긴반지름 <input type="range" id="sa" min="0.5" max="2" step="0.25" value="1"><output id="saOut">1.00 AU</output></label>
+        <div class="field" data-only="kepler"><label><input type="checkbox" id="area" checked> 같은 시간 동안 쓸고 간 넓이 보기</label></div>
+        <label class="field" data-only="sat" for="lv">발사 속력 <input type="range" id="lv" min="5" max="12" step="0.1" value="7.7"><output id="lvOut">7.7 km/s</output></label>
+        <label class="field" data-only="sat" for="alt">발사 고도 <input type="range" id="alt" min="200" max="2000" step="100" value="300"><output id="altOut">300 km</output></label>
+        <button class="btn primary" type="button" id="launch" data-only="sat">발사</button>
+        <button class="btn" type="button" id="wipe" data-only="sat">궤도 지우기</button>
+        <div class="field" data-only="equiv"><div class="seg" id="eqSit"><button type="button" data-eqs="earth">지구 위 정지</button><button type="button" data-eqs="rocket">우주에서 가속</button><button type="button" data-eqs="fall">자유 낙하</button><button type="button" data-eqs="float">우주에서 정지</button></div></div>
+        <button class="btn primary" type="button" id="eqGo" data-only="equiv">공 놓기 · 빛 쏘기</button>
+      </div>
+    </section>
+    <aside class="panel ledger" aria-label="설명"><div class="stats" id="stats"></div><p class="explain" id="explain"></p><p class="note" id="tip"></p></aside>
+  </div>
+  <div class="lower">
+    <section class="panel"><h2 id="gTitle">그래프</h2><p class="sub" id="gSub"></p><div class="graph-box" style="margin-top:8px"><canvas id="graph" aria-label="그래프"></canvas></div></section>
+    <section class="panel"><h2 id="tTitle">정리</h2><div class="tbl-wrap"><table class="data"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div></section>
+  </div>
+  <section aria-label="생각해 보기">
+    <h2 style="margin-bottom:10px">생각해 보기</h2>
+    <div class="think">
+      <details class="q"><summary><span class="qnum">Q1</span>지구가 태양에 가장 가까울 때(1월 초) 우리나라는 겨울이다. 계절은 거리 때문이 아닐까?</summary><p>지구 궤도는 거의 원에 가까워 거리 차이가 작아요. 계절은 자전축이 기울어 태양의 남중 고도와 낮의 길이가 달라지기 때문이에요. 대신 케플러 제2법칙에 따라 1월에 공전 속력이 가장 빨라요.</p></details>
+      <details class="q"><summary><span class="qnum">Q2</span>국제우주정거장 안의 우주인이 둥둥 떠 있는 것은 중력이 없어서일까?</summary><p>아니에요. 고도 400 km에서 중력 가속도는 지표의 약 89 %나 돼요. 우주정거장과 우주인이 함께 지구를 향해 계속 '떨어지며'(원운동하며) 돌기 때문에 무게를 느끼지 못하는 무중력 상태가 되는 거예요.</p></details>
+      <details class="q"><summary><span class="qnum">Q3</span>정지 궤도 위성은 왜 모두 같은 고도(약 35 800 km)에 있을까?</summary><p>지구 자전 주기(약 24시간)와 같은 주기로 돌아야 하는데, 케플러 제3법칙(T² ∝ r³)에 따라 주기가 정해지면 궤도 반지름도 하나로 정해지기 때문이에요.</p></details>
+    </div>
+  </section>
+  <footer class="site" data-footer data-extra="GM(지구) = 3.986×10¹⁴ m³/s², 지구 반지름 6371 km. 행성 자료는 근삿값."></footer>
+</div>
+<script>
+(() => {
+const {C, $, canvas, axes, line, arrow, label} = Kit;
+const S = canvas($('scene')), G = canvas($('graph')), TAU = Math.PI * 2;
+const st = {mode: 'kepler', e: .5, a: 1, area: true, t: 0, lv: 7.7, alt: 300, sat: null, paths: []};
+/* ===== 1. 케플러 법칙 ===== */
+const shape = e => e < .05 ? '원' : e < .3 ? '원에 가까운 타원' : e < .6 ? '타원' : '납작한 타원';
+const Tk = () => Math.pow(st.a, 1.5); // 년
+function kpos(t){ const M = TAU * ((t / Tk()) % 1); let E = M; for (let i = 0; i < 30; i++) E -= (E - st.e * Math.sin(E) - M) / (1 - st.e * Math.cos(E)); const b = st.a * Math.sqrt(1 - st.e * st.e); return [st.a * (Math.cos(E) - st.e), b * Math.sin(E)]; }
+const kspeed = ([x, y]) => { const r = Math.hypot(x, y); return Math.sqrt(4 * Math.PI * Math.PI * (2 / r - 1 / st.a)); }; // AU/년, GM_sun = 4π²
+function drawKepler(){ const g = S.g, W = S.w, H = S.h, sc = Math.min(W * .42 / (st.a * (1 + st.e)), H * .44 / st.a), cx = W * .5 + st.a * st.e * sc, cy = H * .5, X = x => cx + x * sc, Y = y => cy - y * sc, b = st.a * Math.sqrt(1 - st.e * st.e);
+  // 넓이 조각: 같은 시간 간격 12개
+  if (st.area) { const n = 12; for (let k = 0; k < n; k += 3) { g.fillStyle = k % 6 ? 'rgba(224,83,63,.22)' : 'rgba(47,111,208,.22)'; g.beginPath(); g.moveTo(X(0), Y(0)); for (let u = 0; u <= 1.0001; u += .05) { const [x, y] = kpos(Tk() * (k + u) / n); g.lineTo(X(x), Y(y)); } g.closePath(); g.fill(); } label(g, '색칠한 네 조각: 모두 같은 시간(주기의 1/12) 동안 쓸고 간 넓이 — 넓이가 모두 같다', W / 2, H - 14, {size: 11, color: C.muted}); }
+  g.strokeStyle = C.line; g.lineWidth = 1.5; g.beginPath(); g.ellipse(X(-st.a * st.e), cy, st.a * sc, b * sc, 0, 0, TAU); g.stroke();
+  // 초점
+  g.fillStyle = '#f2b636'; g.beginPath(); g.arc(X(0), Y(0), 12, 0, TAU); g.fill(); label(g, '태양 (초점)', X(0), Y(0) + 24, {size: 11, weight: 700}); g.strokeStyle = C.muted; g.beginPath(); g.arc(X(-2 * st.a * st.e), cy, 3, 0, TAU); g.stroke(); if (st.e > .05) label(g, '다른 초점', X(-2 * st.a * st.e), cy + 14, {size: 10, color: C.muted});
+  label(g, '근일점', X(st.a * (1 - st.e)) + 8, cy - 14, {size: 10, color: C.muted, align: 'left'}); label(g, '원일점', X(-st.a * (1 + st.e)) - 8, cy - 14, {size: 10, color: C.muted, align: 'right'});
+  const p = kpos(st.t), v = kspeed(p), r = Math.hypot(p[0], p[1]); g.strokeStyle = C.accent; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(X(0), Y(0)); g.lineTo(X(p[0]), Y(p[1])); g.stroke(); g.setLineDash([]);
+  const p2 = kpos(st.t + .002 * Tk()), dx = p2[0] - p[0], dy = p2[1] - p[1], dl = Math.hypot(dx, dy); arrow(g, X(p[0]), Y(p[1]), X(p[0]) + dx / dl * v * 4, Y(p[1]) - dy / dl * v * 4, C.phy, 2.5);
+  g.fillStyle = C.phy; g.beginPath(); g.arc(X(p[0]), Y(p[1]), 7, 0, TAU); g.fill();
+  label(g, `태양까지 거리 ${r.toFixed(2)} AU · ${spd(r)}`, 14, 18, {size: 12, weight: 700, align: 'left'}); }
+/* ===== 2. 인공위성 (뉴턴의 대포) ===== */
+const GM = 3.986e14, RE = 6.371e6, vCirc = h => Math.sqrt(GM / (RE + h * 1000)), vEsc = h => Math.sqrt(2 * GM / (RE + h * 1000));
+function launch(){ const r = RE + st.alt * 1000; st.sat = {x: 0, y: r, vx: st.lv * 1000, vy: 0, path: [[0, r]], done: false, crash: false, tt: 0}; }
+function stepSat(dt){ const s = st.sat; if (!s || s.done) return; const h = 2, n = Math.round(dt * 600 / h); for (let i = 0; i < n; i++) { const r = Math.hypot(s.x, s.y), a = -GM / (r * r * r); s.vx += a * s.x * h * .5; s.vy += a * s.y * h * .5; s.x += s.vx * h; s.y += s.vy * h; const r2 = Math.hypot(s.x, s.y), a2 = -GM / (r2 * r2 * r2); s.vx += a2 * s.x * h * .5; s.vy += a2 * s.y * h * .5; s.tt += h;
+    if (r2 < RE) { s.done = true; s.crash = true; break; } if (r2 > RE * 7) { s.done = true; break; } }
+  s.path.push([s.x, s.y]); if (s.path.length > 4000) s.path.shift();
+  if (!s.done && s.tt > 3 * 3600 * 6) s.done = true;
+  if (s.done) { st.paths.push({path: s.path, crash: s.crash}); if (st.paths.length > 5) st.paths.shift(); render(); } }
+function drawSat(){ const g = S.g, W = S.w, H = S.h, sc = Math.min(W, H) * .5 / (RE * 2.1), cx = W / 2, cy = H * .55, X = x => cx + x * sc, Y = y => cy - y * sc;
+  for (let i = 0; i < 60; i++) { const x = (i * 97) % W, y = (i * 53) % H; g.fillStyle = 'rgba(120,130,150,.35)'; g.fillRect(x, y, 1.5, 1.5); }
+  const grd = g.createRadialGradient(cx - 20, cy - 20, 10, cx, cy, RE * sc); grd.addColorStop(0, '#6fb0e8'); grd.addColorStop(1, '#2b6aa8'); g.fillStyle = grd; g.beginPath(); g.arc(cx, cy, RE * sc, 0, TAU); g.fill(); label(g, '지구', cx, cy, {size: 14, weight: 700, color: '#fff'});
+  g.strokeStyle = C.muted; g.setLineDash([2, 4]); g.beginPath(); g.arc(cx, cy, (RE + st.alt * 1000) * sc, 0, TAU); g.stroke(); g.setLineDash([]);
+  st.paths.forEach(p => { g.strokeStyle = p.crash ? 'rgba(224,83,63,.45)' : 'rgba(120,130,150,.5)'; g.lineWidth = 1.5; g.beginPath(); p.path.forEach((q, i) => i ? g.lineTo(X(q[0]), Y(q[1])) : g.moveTo(X(q[0]), Y(q[1]))); g.stroke(); });
+  const s = st.sat; if (s) { g.strokeStyle = C.accent; g.lineWidth = 2.2; g.beginPath(); s.path.forEach((q, i) => i ? g.lineTo(X(q[0]), Y(q[1])) : g.moveTo(X(q[0]), Y(q[1]))); g.stroke(); g.fillStyle = s.crash ? C.hot : C.accent; g.beginPath(); g.arc(X(s.x), Y(s.y), 5, 0, TAU); g.fill(); }
+  // 발사대
+  g.fillStyle = C.ink; g.beginPath(); g.moveTo(cx - 6, Y(RE + st.alt * 1000)); g.lineTo(cx + 6, Y(RE + st.alt * 1000)); g.lineTo(cx, Y(RE + st.alt * 1000) + 10); g.fill(); const ly = Y(RE + st.alt * 1000), ax = cx + st.lv * 6; arrow(g, cx, ly, ax, ly, C.hot, 2.5); g.strokeStyle = C.hot; g.lineWidth = 2; g.beginPath(); g.arc(ax + 4, ly, 7, 0, TAU); g.stroke();   // 화살표 길이 = 발사 속력(1 km/s = 6 px), 끝 고리를 끌어 바꿈
+  if (typeof lvDrag !== 'undefined' && (lvDrag.hover ?? lvDrag.active) != null) { g.setLineDash([4, 3]); g.lineWidth = 1.5; g.beginPath(); g.arc(ax + 4, ly, 13, 0, TAU); g.stroke(); g.setLineDash([]); }
+  const v = st.lv, vc = vCirc(st.alt) / 1000, ve = vEsc(st.alt) / 1000, kind = v < vc - .05 ? '지구로 떨어진다 (또는 타원 궤도 일부)' : v <= vc + .05 ? '원 궤도 — 제1 우주 속도' : v < ve ? '타원 궤도' : '지구 중력을 벗어난다 — 탈출 속도 이상';
+  label(g, `예상: ${kind}`, W / 2, 20, {size: 14, weight: 700, color: C.accent});
+  if (s && s.crash && s.done) label(g, '충돌! 속력을 높여 보세요', W / 2, 42, {size: 13, weight: 700, color: C.hot}); }
+
+/* ===== 3D 화면 ===== */
+const V = Sim3D.create(S.cv.parentElement, {modes: ['kepler', 'sat']});
+const O3 = {};
+if (V) {
+  const T = V.T;
+  const glowTex = (() => { const c = document.createElement('canvas'); c.width = c.height = 128; const g = c.getContext('2d'), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+    gr.addColorStop(0, 'rgba(255,240,200,1)'); gr.addColorStop(.35, 'rgba(255,200,90,.5)'); gr.addColorStop(1, 'rgba(255,170,60,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); return new T.CanvasTexture(c); })();
+  // 1. 케플러: 궤도면을 비스듬히 내려다본다
+  const K = V.stage('kepler', {bg: 'space', cam: [0, 7.2, 4.2], target: [0, 0, .2], lights: false, minD: 3, maxD: 20});
+  K.scene.add(new T.AmbientLight(0xffffff, .35)); K.scene.add(new T.PointLight(0xffffff, 3, 0, 0));
+  K.root.add(V.stars(700, 60, 3));
+  O3.k = new T.Group(); K.root.add(O3.k); O3.kv = new T.Group(); O3.k.add(O3.kv);
+  const sun = new T.Group(); sun.add(new T.Mesh(new T.SphereGeometry(.28, 40, 24), new T.MeshBasicMaterial({color: 0xffcf4a})));
+  const sp = new T.Sprite(new T.SpriteMaterial({map: glowTex, transparent: true, depthWrite: false, blending: T.AdditiveBlending})); sp.scale.set(1.5, 1.5, 1); sun.add(sp); O3.k.add(sun);
+  V.label('태양 (초점)', sun, {pos: [0, -.5, 0], cls: 'on-dark'});
+  O3.pl = new T.Mesh(new T.SphereGeometry(.12, 28, 18), new T.MeshStandardMaterial({color: 0x4f8fe0, roughness: .6})); O3.k.add(O3.pl);
+  O3.vel = V.arrow([0, 0, 0], [1, 0, 0], 0xff8a5c, .025); O3.k.add(O3.vel);
+  O3.rl = new T.Line(new T.BufferGeometry().setFromPoints([new T.Vector3(), new T.Vector3()]), new T.LineDashedMaterial({color: 0x9fc4ff, dashSize: .08, gapSize: .06})); O3.k.add(O3.rl);
+  O3.f2 = new T.Mesh(new T.SphereGeometry(.05, 16, 10), new T.MeshBasicMaterial({color: 0x8894a8})); O3.k.add(O3.f2); O3.f2L = V.label('다른 초점', O3.f2, {pos: [0, -.22, 0], cls: 'on-dark dim'});
+  O3.periL = V.label('근일점', O3.k, {cls: 'on-dark dim'}); O3.apL = V.label('원일점', O3.k, {cls: 'on-dark dim'});
+  O3.kLab = V.label('', K.root, {pos: [0, 0, -2.9], cls: 'on-dark big'});
+  O3.areaL = V.label('색칠한 네 조각: 같은 시간(주기의 1/12) 동안 쓸고 간 넓이\n→ 넓이가 모두 같다', K.root, {pos: [0, 0, 2.55], cls: 'on-dark dim'});   /* 아래쪽 '끌어서 돌리기' 안내와 겹치지 않게 궤도 바로 아래에 */
+  // 2. 인공위성: 지구본과 발사 지점(우리나라 근처를 위로)
+  const SAT = V.stage('sat', {bg: 'space', cam: [0, 1.4, 12], target: [0, .4, 0], lights: false, minD: 4, maxD: 40});
+  SAT.scene.add(new T.AmbientLight(0xffffff, .55)); { const l = new T.DirectionalLight(0xffffff, 2.2); l.position.set(-6, 6, 8); SAT.scene.add(l); }
+  SAT.root.add(V.stars(900, 80, 11));
+  const ER = 2; O3.sc = ER / RE;
+  const earth = new T.Mesh(new T.SphereGeometry(ER, 72, 48), new T.MeshStandardMaterial({map: V.earthTex({grid: false, sea: '#3d7fc4', land: '#8fbf72', edge: '#6a9a55'}), roughness: .85}));
+  earth.quaternion.setFromUnitVectors(V.ll(127, 37, 1).normalize(), new T.Vector3(0, 1, 0)); SAT.root.add(earth);
+  V.label('지구', SAT.root, {pos: [0, -ER - .35, 0], cls: 'on-dark'});
+  O3.pad = new T.Group(); SAT.root.add(O3.pad);
+  O3.pad.add(new T.Mesh(new T.ConeGeometry(.12, .3, 16), new T.MeshStandardMaterial({color: 0xe8e1cf})));
+  O3.padA = V.arrow([0, 0, 0], [.7, 0, 0], 0xe0533f, .03); O3.pad.add(O3.padA);
+  O3.alt = new T.Group(); SAT.root.add(O3.alt);
+  const N = 4001; O3.cur = new T.Line(new T.BufferGeometry(), new T.LineBasicMaterial({color: 0x7fd0ff})); O3.cur.geometry.setAttribute('position', new T.BufferAttribute(new Float32Array(N * 3), 3)); O3.cur.frustumCulled = false; SAT.root.add(O3.cur);
+  O3.satM = new T.Mesh(new T.SphereGeometry(.08, 16, 10), new T.MeshBasicMaterial({color: 0x7fd0ff})); SAT.root.add(O3.satM);
+  O3.old = new T.Group(); SAT.root.add(O3.old);
+  O3.sLab = V.label('', SAT.root, {pos: [0, 4.2, 0], cls: 'on-dark big'});
+  O3.cLab = V.label('충돌! 속력을 높여 보세요', SAT.root, {pos: [0, 3.6, 0], cls: 'on-dark', color: '#ff8a7a'});
+}
+function draw3D(){
+  if (!V || !V.on(st.mode)) return false;
+  const T = V.T;
+  if (st.mode === 'kepler') {
+    const sc = Math.min(3.2 / (st.a * (1 + st.e)), 2.4 / st.a), b = st.a * Math.sqrt(1 - st.e * st.e), P = (x, y) => new T.Vector3(x * sc, 0, -y * sc);
+    O3.k.position.x = st.a * st.e * sc;
+    const key = st.e + '|' + st.a + '|' + st.area;
+    if (O3.key !== key) { O3.key = key; V.clear(O3.kv);
+      const pts = []; for (let i = 0; i <= 160; i++) { const E = i / 160 * TAU; pts.push(P(st.a * (Math.cos(E) - st.e), b * Math.sin(E))); } O3.kv.add(V.line(pts, 0xc8d2e0));
+      if (st.area) { const n = 12; for (let k = 0; k < n; k += 3) { const v = [0, 0, 0]; for (let u = 0; u <= 1.0001; u += .05) { const [x, y] = kpos(Tk() * (k + u) / n); v.push(x * sc, 0, -y * sc); }
+          const idx = []; for (let i = 1; i < v.length / 3 - 1; i++) idx.push(0, i, i + 1); const g = new T.BufferGeometry(); g.setAttribute('position', new T.Float32BufferAttribute(v, 3)); g.setIndex(idx);
+          O3.kv.add(new T.Mesh(g, new T.MeshBasicMaterial({color: k % 6 ? 0xe0533f : 0x2f6fd0, transparent: true, opacity: .38, side: T.DoubleSide, depthWrite: false}))); } }
+      O3.f2.position.copy(P(-2 * st.a * st.e, 0)); O3.f2.visible = st.e > .05; O3.periL.position.copy(P(st.a * (1 - st.e) + .1 / sc * 3, 0)); O3.apL.position.copy(P(-st.a * (1 + st.e) - .1 / sc * 3, 0)); }
+    O3.areaL.visible = st.area;
+    const p = kpos(st.t), v = kspeed(p), r = Math.hypot(p[0], p[1]), pos = P(p[0], p[1]); O3.pl.position.copy(pos);
+    const p2 = kpos(st.t + .002 * Tk()), d = P(p2[0], p2[1]).sub(pos).normalize().multiplyScalar(v * .09);
+    O3.vel.userData.set(pos.toArray(), pos.clone().add(d).toArray());
+    const rp = O3.rl.geometry.attributes.position; rp.setXYZ(1, pos.x, pos.y, pos.z); rp.needsUpdate = true; O3.rl.computeLineDistances();
+    O3.kLab.set(`태양까지 거리 ${r.toFixed(2)} AU · ${spd(r)}`);
+    V.render('kepler'); return true;
+  }
+  const sc = O3.sc, r0 = (RE + st.alt * 1000) * sc;
+  O3.pad.position.set(0, r0, 0); O3.pad.children[0].position.y = -.1;
+  if (O3.altK !== st.alt) { O3.altK = st.alt; V.clear(O3.alt); const c = V.circle(r0, 0x8894a8, {dash: .08}); c.rotation.x = Math.PI / 2; O3.alt.add(c); }
+  if (O3.oldK !== st.paths) { O3.oldK = st.paths; O3.oldN = -1; }
+  if (O3.oldN !== st.paths.length) { O3.oldN = st.paths.length; V.clear(O3.old); st.paths.forEach(q => O3.old.add(V.line(q.path.filter((_, i) => i % 2 === 0 || i === q.path.length - 1).map(([x, y]) => [x * sc, y * sc, 0]), q.crash ? 0xe0533f : 0x8894a8, {opacity: .6}))); }
+  const s = st.sat, pa = O3.cur.geometry.attributes.position;
+  if (s) { const n = Math.min(s.path.length, 4001); for (let i = 0; i < n; i++) { const q = s.path[s.path.length - n + i]; pa.setXYZ(i, q[0] * sc, q[1] * sc, 0); } pa.needsUpdate = true; O3.cur.geometry.setDrawRange(0, n);
+    O3.satM.position.set(s.x * sc, s.y * sc, 0); O3.satM.material.color.set(s.crash ? 0xe0533f : 0x7fd0ff); }
+  O3.cur.visible = O3.satM.visible = !!s; O3.cLab.visible = !!(s && s.crash && s.done);
+  const v = st.lv, vc = vCirc(st.alt) / 1000, ve = vEsc(st.alt) / 1000; O3.sLab.set('예상: ' + (v < vc - .05 ? '지구로 떨어진다 (또는 타원 궤도 일부)' : v <= vc + .05 ? '원 궤도 — 제1 우주 속도' : v < ve ? '타원 궤도' : '지구 중력을 벗어난다 — 탈출 속도 이상'));
+  V.render('sat'); return true;
+}
+/* ===== 그래프·표 ===== */
+const spd = r => { const k = st.a / r; return k > 1.12 ? '빠르게 지나간다' : k < .9 ? '느리게 지나간다' : '보통 빠르기'; };
+const PL = [['수성', .387, .241], ['금성', .723, .615], ['지구', 1, 1], ['화성', 1.524, 1.881], ['목성', 5.203, 11.86], ['토성', 9.537, 29.45]];
+function drawGraph(){ const g = G.g;
+  if (st.mode === 'kepler') { const m = axes(G, {x: [0, 1, .25, '시간 (주기의 몇 배)'], y: [0, 3, .5, '태양까지 거리 (AU)']}); const P = [], V = []; for (let u = 0; u <= 1.0001; u += .005) { const p = kpos(Tk() * u); P.push([u, Math.hypot(p[0], p[1])]); } line(G, P, m, C.accent, 2.5); const u = (st.t / Tk()) % 1; g.fillStyle = C.phy; g.beginPath(); g.arc(m.X(u), m.Y(Math.hypot(...kpos(st.t))), 5, 0, TAU); g.fill(); label(g, '가까울 때는 짧게, 멀 때는 오래 머문다', m.X(.5), m.Y(2.7), {size: 10, color: C.muted}); }
+  else { const m = axes(G, {x: [0, 40, 5, '고도 (×1000 km)'], y: [0, 26, 4, '공전 주기 (시간)']}); const P = []; for (let h = .2; h <= 40; h += .2) { const r = RE + h * 1e6; P.push([h, TAU * Math.sqrt(r * r * r / GM) / 3600]); } line(G, P, m, C.accent, 2.5); const r0 = RE + st.alt * 1000; g.fillStyle = C.hot; g.beginPath(); g.arc(m.X(st.alt / 1000), m.Y(TAU * Math.sqrt(r0 ** 3 / GM) / 3600), 5, 0, TAU); g.fill(); g.strokeStyle = C.muted; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(m.X(0), m.Y(23.93)); g.lineTo(m.X(35.79), m.Y(23.93)); g.lineTo(m.X(35.79), m.Y(0)); g.stroke(); g.setLineDash([]); label(g, '정지 궤도 (24시간)', m.X(30), m.Y(24.8), {size: 10, color: C.muted}); } }
+function render(){ const s = $('stats'), th = $('thead'), tb = $('tbody'), set = (gt, gs, tt) => { $('gTitle').textContent = gt; $('gSub').textContent = gs; $('tTitle').textContent = tt; };
+  if (st.mode === 'kepler') { s.innerHTML = `<div><b>${Tk().toFixed(2)} 년</b><span>공전 주기</span></div><div><b>${(T => (T * T / st.a ** 3).toFixed(2))(Tk())}</b><span>T² / a³</span></div><div><b>${shape(st.e)}</b><span>궤도 모양</span></div><div><b>${st.e < .02 ? '같다' : '근일점이 더 빠르다'}</b><span>근일점과 원일점의 속력</span></div>`;
+    $('explain').innerHTML = '<b>케플러 법칙</b> ① 타원 궤도 법칙: 행성은 태양을 한 초점으로 하는 타원 궤도를 돈다. ② 면적 속도 일정 법칙: 행성과 태양을 잇는 선분이 같은 시간 동안 쓸고 가는 넓이는 같다 → 가까울수록 빠르다. ③ 조화 법칙: 공전 주기의 제곱은 긴반지름의 세제곱에 비례한다 (T² ∝ a³).'; $('tip').textContent = '궤도를 납작하게 할수록 근일점과 원일점의 속력 차이가 커져요. 궤도 모양을 ‘원’으로 두면 거리와 속력이 일정해져요. 궤도 모양을 바꿔도 공전 주기는 긴반지름으로만 정해져요.';
+    th.innerHTML = '<tr><th>행성</th><th>a (AU)</th><th>T (년)</th><th>T²/a³</th></tr>'; tb.innerHTML = PL.map(([n, a, T]) => `<tr><td>${n}</td><td>${a}</td><td>${T}</td><td>${(T * T / a ** 3).toFixed(3)}</td></tr>`).join(''); set('시간에 따른 태양까지의 거리', `궤도 모양: ${shape(st.e)}`, '케플러 제3법칙 확인'); }
+  else { const vc = vCirc(st.alt) / 1000, ve = vEsc(st.alt) / 1000, gh = GM / (RE + st.alt * 1000) ** 2; s.innerHTML = `<div><b>${vc.toFixed(2)} km/s</b><span>원 궤도 속력 √(GM/r)</span></div><div><b>${ve.toFixed(2)} km/s</b><span>탈출 속력 √(2GM/r)</span></div><div><b>${gh.toFixed(2)} m/s²</b><span>이 고도의 중력 가속도</span></div><div><b>${(TAU * Math.sqrt((RE + st.alt * 1000) ** 3 / GM) / 60).toFixed(0)} 분</b><span>원 궤도 주기</span></div>`;
+    $('explain').innerHTML = '<b>만유인력 법칙</b>: 질량을 가진 두 물체는 F = GMm/r²로 서로 끌어당겨요. 인공위성은 만유인력을 구심력으로 원운동해요: GMm/r² = mv²/r → v = √(GM/r). 뉴턴은 높은 산에서 대포를 충분히 빠르게 쏘면 땅에 떨어지지 않고 지구를 돈다고 생각했어요.'; $('tip').textContent = '발사 속력을 바꿔 가며 [발사]: 원 궤도 속력보다 느리면 추락, 같으면 원, 빠르면 타원, 탈출 속력 이상이면 지구를 떠나요. 지표 근처에서 제1 우주 속도 ≈ 7.9 km/s, 탈출 속도 ≈ 11.2 km/s.';
+    th.innerHTML = '<tr><th>위성</th><th>고도 (km)</th><th>속력 (km/s)</th><th>주기</th></tr>'; tb.innerHTML = [['국제우주정거장', 400], ['아리랑(지구 관측)', 685], ['GPS 위성', 20200], ['천리안(정지 궤도)', 35786]].map(([n, h]) => { const r = RE + h * 1000, T = TAU * Math.sqrt(r ** 3 / GM); return `<tr><td>${n}</td><td>${h}</td><td>${(Math.sqrt(GM / r) / 1000).toFixed(2)}</td><td>${T < 7200 ? (T / 60).toFixed(0) + '분' : (T / 3600).toFixed(1) + '시간'}</td></tr>`; }).join(''); set('고도와 공전 주기', '원 궤도, T = 2π√(r³/GM)', '여러 인공위성'); } }
+const bind = (id, k, f) => { $(id).oninput = e => { st[k] = +e.target.value; $(id + 'Out').textContent = f(st[k]); render(); }; };
+// 끌기(인공위성): 발사대 속도 화살표 끝을 끌어 발사 속력 — 3D 보기에서는 끄지 않음
+const lvDrag = Kit.grab(S.cv, {hit: (x, y) => { if (st.mode !== 'sat' || V.on(st.mode)) return null; const sc = Math.min(S.w, S.h) * .5 / (RE * 2.1), ly = S.h * .55 - (RE + st.alt * 1000) * sc; return Math.hypot(x - S.w / 2 - st.lv * 6 - 4, y - ly) < 20 ? 0 : null; },
+  move: (i, x) => Kit.setRange('lv', (x - S.w / 2 - 4) / 6)});
+bind('ec', 'e', shape); bind('sa', 'a', v => v.toFixed(2) + ' AU'); bind('lv', 'lv', v => v.toFixed(1) + ' km/s'); bind('alt', 'alt', v => v + ' km');
+$('area').onchange = e => { st.area = e.target.checked; }; Kit.act($('launch'), {go: launch, busy: () => !!st.sat && !st.sat.done, resume: '다시 돌기'}); $('wipe').onclick = () => { st.paths = []; st.sat = null; };
+/* ===== 3. 등가 원리 (새 모드): 엘리베이터 사고 실험 ===== */
+{
+const EQ = {sit: 'earth', t: -1, path: [], beam: []};
+const SIT = {earth: ['지구 위에 정지', 9.8, 0], rocket: ['우주에서 위로 가속 (9.8 m/s²)', 0, 9.8], fall: ['지구에서 자유 낙하', 9.8, -9.8], float: ['우주에서 정지 (등속)', 0, 0]};
+const gEff = () => { const s = SIT[EQ.sit]; return s[1] + s[2]; }; // 엘리베이터 안에서 느끼는 가속도
+const X = {
+  enter(){ EQ.t = -1; },
+  step(dt){ if (EQ.t >= 0) { EQ.t += dt * .5; if (EQ.t > 1.2) EQ.t = 1.2; } },
+  draw(){ const g = S.g, W = S.w, H = S.h, s = SIT[EQ.sit], bw = Math.min(W * .42, H * .8), bh = bw * 1.1, bx = W * .3 - bw / 2, by = (H - bh) / 2 + 10, ge = gEff();
+    if (s[1]) { const sk = g.createLinearGradient(0, 0, 0, H); sk.addColorStop(0, '#8fc4ec'); sk.addColorStop(1, '#e6f3fb'); g.fillStyle = sk; g.fillRect(0, 0, W, H); g.fillStyle = '#c3ced8'; for (let x = 0; x < W; x += 36) { const hh = 40 + ((x * 37) % 90); g.fillRect(x, H - 14 - hh, 32, hh); } g.fillStyle = '#6fa85a'; g.fillRect(0, H - 14, W, 14); label(g, '지구', 30, H - 24, {size: 11, color: '#fff', weight: 700}); }
+    else { g.fillStyle = '#05070f'; g.fillRect(0, 0, W, H); for (let i = 0; i < 120; i++) { g.fillStyle = `rgba(255,255,255,${.3 + (i % 5) / 8})`; g.fillRect((i * 97) % W, (i * 57) % H, 1.4, 1.4); } const eg = g.createRadialGradient(W * .9, H * .85, 4, W * .9, H * .85, 60); eg.addColorStop(0, '#9fd0ff'); eg.addColorStop(.7, '#2f6fb8'); eg.addColorStop(1, '#0b2a55'); g.fillStyle = eg; g.beginPath(); g.arc(W * .9, H * .85, 60, 0, TAU); g.fill(); }
+    // 엘리베이터 칸: 금속 벽, 천장 조명, 바닥 타일
+    const wall = g.createLinearGradient(bx, 0, bx + bw, 0); wall.addColorStop(0, '#b9c2ca'); wall.addColorStop(.5, '#eef2f5'); wall.addColorStop(1, '#aeb7bf'); g.fillStyle = wall; g.fillRect(bx, by, bw, bh);
+    g.strokeStyle = 'rgba(90,100,110,.18)'; g.lineWidth = 1; for (let x = bx + bw / 4; x < bx + bw; x += bw / 4) { g.beginPath(); g.moveTo(x, by); g.lineTo(x, by + bh); g.stroke(); }
+    const fl0 = by + bh - 10; g.fillStyle = '#6b6f75'; g.fillRect(bx, fl0, bw, 10); g.fillStyle = 'rgba(255,255,255,.12)'; for (let x = bx; x < bx + bw; x += 20) g.fillRect(x, fl0, 1, 10);
+    const lg = g.createRadialGradient(bx + bw / 2, by + 4, 2, bx + bw / 2, by + 4, bw * .5); lg.addColorStop(0, 'rgba(255,250,220,.55)'); lg.addColorStop(1, 'rgba(255,250,220,0)'); g.fillStyle = lg; g.fillRect(bx, by, bw, bh * .5); g.fillStyle = '#fffbe6'; g.fillRect(bx + bw * .35, by + 2, bw * .3, 5);
+    g.strokeStyle = '#4a525a'; g.lineWidth = 5; g.strokeRect(bx, by, bw, bh); if (s[1]) { g.strokeStyle = '#3a4048'; g.lineWidth = 2; g.beginPath(); g.moveTo(bx + bw / 2, 0); g.lineTo(bx + bw / 2, by); g.stroke(); }
+    if (s[2] > 0) { for (let i = 0; i < 3; i++) { g.fillStyle = ['#ffb347', '#ff7043', '#ffd54f'][i]; g.beginPath(); g.moveTo(bx + bw * (.3 + i * .2) - 10, by + bh); g.lineTo(bx + bw * (.3 + i * .2), by + bh + 30 + Math.random() * 20); g.lineTo(bx + bw * (.3 + i * .2) + 10, by + bh); g.fill(); } arrow(g, bx + bw + 30, by + bh * .7, bx + bw + 30, by + bh * .3, '#ffb347', 3); label(g, '가속', bx + bw + 30, by + bh * .75, {size: 11, color: '#ffb347', weight: 700}); }
+    if (s[2] < 0) { arrow(g, bx + bw + 30, by + bh * .3, bx + bw + 30, by + bh * .7, C.hot, 3); label(g, '낙하', bx + bw + 30, by + bh * .25, {size: 11, color: C.hot, weight: 700}); }
+    // 사람
+    const px = bx + bw * .18, py = by + bh - 10, fl = ge ? 0 : Math.sin(performance.now() / 600) * 6 - bh * .3, k = 1.2, Y0 = py + fl;
+    g.lineCap = 'round'; g.strokeStyle = '#2f3a4a'; g.lineWidth = 7 * k; g.beginPath(); g.moveTo(px - 4, Y0 - 30 * k); g.lineTo(px - 6, Y0 - 2); g.moveTo(px + 4, Y0 - 30 * k); g.lineTo(px + 7, Y0 - 2); g.stroke();
+    g.fillStyle = '#222'; g.fillRect(px - 11, Y0 - 4, 9, 4); g.fillRect(px + 3, Y0 - 4, 9, 4);
+    const sh = g.createLinearGradient(px - 10, 0, px + 10, 0); sh.addColorStop(0, '#2f6fd0'); sh.addColorStop(1, '#1d4a94'); g.fillStyle = sh; g.beginPath(); g.moveTo(px - 10, Y0 - 30 * k); g.lineTo(px - 9, Y0 - 56 * k); g.quadraticCurveTo(px, Y0 - 60 * k, px + 9, Y0 - 56 * k); g.lineTo(px + 10, Y0 - 30 * k); g.closePath(); g.fill();
+    g.strokeStyle = '#2f6fd0'; g.lineWidth = 5; g.beginPath(); g.moveTo(px - 8, Y0 - 54 * k); g.lineTo(px - 12, Y0 - (ge ? 34 : 64) * k); g.moveTo(px + 8, Y0 - 54 * k); g.lineTo(px + 12, Y0 - (ge ? 34 : 64) * k); g.stroke(); g.lineCap = 'butt';
+    const hg = g.createRadialGradient(px - 3, Y0 - 68 * k, 1, px, Y0 - 66 * k, 9); hg.addColorStop(0, '#fbd9b8'); hg.addColorStop(1, '#d9a07a'); g.fillStyle = hg; g.beginPath(); g.arc(px, Y0 - 66 * k, 8.5, 0, TAU); g.fill(); g.fillStyle = '#3a2a1e'; g.beginPath(); g.arc(px, Y0 - 68 * k, 8.8, Math.PI * 1.05, Math.PI * 1.95); g.fill();
+    // 공과 빛 (엘리베이터 안 좌표: 시간 0~1.2 s, 공은 높이 0.8 bh에서 놓음)
+    const t = Math.max(0, EQ.t), ex = 8; // 빛의 휘어짐은 보기 쉽게 크게 과장
+    const ballY = by + bh * .2 + Math.min(bh * .8 - 11, .5 * ge * t * t * bh / 6), bxx = bx + bw * .45;
+    { const yy = EQ.t < 0 ? by + bh * .2 : ballY, bg = g.createRadialGradient(bxx - 3, yy - 3, 1, bxx, yy, 10); bg.addColorStop(0, '#ffb3a6'); bg.addColorStop(1, '#a8261a'); g.fillStyle = bg; g.beginPath(); g.arc(bxx, yy, 10, 0, TAU); g.fill(); }
+    const lx0 = bx + 6, ly0 = by + bh * .45; g.fillStyle = '#555'; g.fillRect(lx0 - 6, ly0 - 6, 14, 12);
+    if (EQ.t >= 0) { const u = Math.min(1, t / .8); g.strokeStyle = '#e0533f'; g.lineWidth = 3; g.beginPath(); for (let k = 0; k <= 40 * u; k++) { const f = k / 40, x = lx0 + f * (bw - 12), y = ly0 + ge / 9.8 * ex * f * f * bh / 60; k ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); }
+    label(g, s[0], W * .3, 22, {size: 15, weight: 700, color: s[1] ? '#1b2a3a' : '#e8eef5'});
+    const rx = W * .78; [['공을 놓으면', ge ? '바닥으로 떨어진다' : '그 자리에 떠 있다'], ['빛을 수평으로 쏘면', ge ? '아래로 휜다 (과장)' : '곧게 나아간다'], ['안에 있는 사람은', ge ? '몸무게를 느낀다' : '무중력을 느낀다']].forEach(([a, b], i) => { label(g, a, rx, H * .28 + i * 56, {size: 12, color: s[1] ? C.muted : '#aab6c5'}); label(g, b, rx, H * .28 + i * 56 + 20, {size: 15, weight: 700, color: s[1] ? C.accent : '#8fc0ff'}); });
+    label(g, '창문이 없다면 안에서는 두 상황을 구별할 수 없다', rx, H * .28 + 3 * 56 + 6, {size: 11, weight: 700, color: s[1] ? C.hot : '#ffb4a8'});
+    this.graph(); },
+  graph(){ const g = G.g, m = axes(G, {x: [0, 1.2, .2, '시간 (s)'], y: [0, 7, 1, '엘리베이터 안에서 본 공의 낙하 거리 (m)']}); Object.keys(SIT).forEach(k => { const a = SIT[k][1] + SIT[k][2], P = []; for (let t = 0; t <= 1.2; t += .02) P.push([t, .5 * a * t * t]); line(G, P, m, k === EQ.sit ? C.hot : C.line, k === EQ.sit ? 3 : 1.5, k === EQ.sit ? [] : [4, 4]); });
+    label(g, '지구 위 정지 = 우주에서 가속 (겹친 선) · 자유 낙하 = 우주에서 정지 (0)', m.X(.6), m.Y(6.4), {size: 10, color: C.muted}); },
+  render(){ Kit.panel({stats: [[`${gEff().toFixed(1)} m/s²`, '안에서 느끼는 가속도'], [gEff() ? '있음' : '없음', '몸무게 느낌']], explain: '<b>등가 원리</b>: 중력에 의한 효과와 가속 운동에 의한 효과는 구별할 수 없다(아인슈타인). 우주에서 위로 가속하는 엘리베이터 안의 빛은 바닥 쪽으로 휘어 보여요 → 중력이 있는 곳에서도 <b>빛이 휜다</b>. 일반 상대성 이론은 이를 질량이 <b>시공간을 휘게</b> 한다고 설명해요.', tip: '실제로 지구 중력에서 빛이 휘는 정도는 아주 작아요(그림은 과장). 태양 근처를 지나는 별빛이 휘는 현상은 1919년 개기 일식 때 관측되었어요.', g: ['상황별 공의 낙하 거리', '엘리베이터 안의 관찰자가 본 운동'], t: '행성의 탈출 속도와 대기', head: ['천체', '탈출 속도 (km/s)', '대기'], rows: [['달', '2.4', '거의 없음'], ['화성', '5.0', '얇음 (주로 이산화 탄소)'], ['지구', '11.2', '질소·산소'], ['목성', '59.5', '수소·헬륨이 두꺼움']]}); } };
+Kit.seg(Kit.$('eqSit'), 'eqs', v => { EQ.sit = v; EQ.t = -1; X.render(); })('earth');
+Kit.$('eqGo').onclick = () => { EQ.t = 0; };
+Kit.ex(st, {equiv: X});
+}
+Kit.tabs(m => { st.mode = m; render(); }, ['kepler', 'sat']);
+Kit.loop(dt => { st.t += dt * .25 * Tk() / Math.max(.5, Tk()); stepSat(dt); }, () => { if (!draw3D()) { S.g.fillStyle = C.surface; S.g.fillRect(0, 0, S.w, S.h); (st.mode === 'kepler' ? drawKepler : drawSat)(); } drawGraph(); });
+})();
+</script>
+</body>
+</html>

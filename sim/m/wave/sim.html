@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>탄성파와 소리 실험실 · 역학과 에너지</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../../assets/site.css">
+<script src="../../assets/catalog.js"></script>
+<script src="../../assets/simkit.js"></script>
+<script src="../../assets/labdraw.js"></script>
+<script src="../../assets/simex.js"></script>
+<script src="../../assets/lessonbar.js" defer></script>
+</head>
+<body data-root="../../" class="area-phy">
+<div class="wrap">
+  <nav class="topbar" data-topbar="역학과 에너지|05 탄성파와 소리" data-ws="worksheet.html"></nav>
+  <header class="page">
+    <div>
+      <div class="eyebrow"><i class="area-dot"></i>역학과 에너지 · 05 탄성파와 소리 <span class="code">12역학03-03</span><span class="code">12역학03-05</span><span class="code">12역학03-02</span><span class="code">12역학03-04</span></div>
+      <h1>탄성파와 소리 실험실</h1>
+    </div>
+    <div class="seg" role="group" aria-label="차시 고르기">
+      <button type="button" data-mode="pulse">1. 탄성파의 투과와 반사</button>
+      <button type="button" data-mode="doppler">2. 도플러 효과</button>
+      <button type="button" data-mode="phone">3. 스마트폰 도플러 측정</button>
+      <button type="button" data-mode="interf">4. 음파의 간섭과 소음 제어</button>
+      <button type="button" data-mode="stand">5. 정상파와 공명</button>
+    </div>
+  </header>
+  <div class="main">
+    <section class="panel scene" aria-label="실험 장치">
+      <div class="canvas-box"><canvas id="scene" aria-label="파동 장면"></canvas></div>
+      <div class="controls">
+        <div class="field" data-only="phone"><div class="seg" id="phV"><button type="button" data-ph="bike">자전거</button><button type="button" data-ph="car">자동차</button><button type="button" data-ph="train">기차</button></div></div>
+        <label class="field" data-only="phone" for="phT">기온 <input type="range" id="phT" min="0" max="35" step="1" value="20"><output id="phTOut">20 ℃</output></label>
+        <button class="btn primary" type="button" id="phGo" data-only="phone">▶ 지나가게 하기 (측정)</button>
+        <label class="field" data-only="phone" for="phC">읽을 시각 <input type="range" id="phC" min="0" max="8" step="0.05" value="1"><output id="phCOut">1.00 s</output></label>
+        <button class="btn" type="button" id="phA" data-only="phone">다가올 때 값으로 기록</button><button class="btn" type="button" id="phB" data-only="phone">멀어질 때 값으로 기록</button><button class="btn" type="button" id="phR" data-only="phone">정답 공개</button>
+        <label class="field" data-only="doppler" for="vs">음원 속력 <input type="range" id="vs" min="0" max="500" step="10" value="100"><output id="vsOut">100 m/s</output></label>
+        <label class="field" data-only="doppler" for="f0">음원 진동수 <input type="range" id="f0" min="200" max="800" step="20" value="440"><output id="f0Out">440 Hz</output></label>
+        <button class="btn primary" type="button" id="listen" data-only="doppler">🔊 지나가는 소리 듣기</button>
+        <div class="field" data-only="stand"><div class="seg" id="kindSeg"><button type="button" data-kind="string">줄 (양끝 고정)</button><button type="button" data-kind="open">열린 관</button><button type="button" data-kind="closed">닫힌 관</button></div></div>
+        <label class="field" data-only="stand" for="hn">배수 n <input type="range" id="hn" min="1" max="6" step="1" value="1"><output id="hnOut">1</output></label>
+        <label class="field" data-only="stand" for="sL">길이 <input type="range" id="sL" min="0.3" max="1.2" step="0.05" value="0.65"><output id="sLOut">0.65 m</output></label>
+        <button class="btn primary" type="button" id="tone" data-only="stand">🔊 소리 듣기</button>
+        <div class="field" data-only="pulse"><div class="seg" id="puBd"><button type="button" data-pub="fixed">고정단</button><button type="button" data-pub="free">자유단</button><button type="button" data-pub="l2h">가벼운→무거운 줄</button><button type="button" data-pub="h2l">무거운→가벼운 줄</button></div></div>
+        <div class="field" data-only="pulse"><div class="seg" id="puKind"><button type="button" data-puk="pulse">펄스 하나</button><button type="button" data-puk="wave">연속파 (3번 흔들기)</button></div></div>
+        <button class="btn primary" type="button" id="puGo" data-only="pulse">줄 흔들기</button>
+        <label class="field" data-only="interf" for="ifF">진동수 <input type="range" id="ifF" min="170" max="850" step="10" value="340"><output id="ifFOut">340 Hz</output></label>
+        <label class="field" data-only="interf" for="ifY">듣는 위치 <input type="range" id="ifY" min="-3.2" max="3.2" step="0.02" value="0"><output id="ifYOut">0.00 m</output></label>
+        <div class="field" data-only="interf"><label><input type="checkbox" id="ifAnti"> 스피커 B를 반대 위상으로</label></div>
+      </div>
+    </section>
+    <aside class="panel ledger" aria-label="설명"><div class="stats" id="stats"></div><p class="explain" id="explain"></p><p class="note" id="tip"></p></aside>
+  </div>
+  <div class="lower">
+    <section class="panel"><h2 id="gTitle">그래프</h2><p class="sub" id="gSub"></p><div class="graph-box" style="margin-top:8px"><canvas id="graph" aria-label="그래프"></canvas></div></section>
+    <section class="panel"><h2 id="tTitle">정리</h2><div class="tbl-wrap"><table class="data"><thead id="thead"></thead><tbody id="tbody"></tbody></table></div></section>
+  </div>
+  <section aria-label="생각해 보기">
+    <h2 style="margin-bottom:10px">생각해 보기</h2>
+    <div class="think">
+      <details class="q"><summary><span class="qnum">Q1</span>구급차가 다가올 때와 멀어질 때 사이렌 소리가 다르게 들리는 까닭은?</summary><p>음원이 다가오면 앞쪽 파면 사이 간격(파장)이 짧아져 진동수가 높게, 멀어지면 파장이 길어져 낮게 들려요. 음원 자체의 진동수는 변하지 않아요.</p></details>
+      <details class="q"><summary><span class="qnum">Q2</span>음원이 소리보다 빠르게 움직이면 어떤 일이 생길까?</summary><p>파면들이 겹쳐 원뿔 모양의 충격파(마하 원뿔)가 생겨요. 초음속 비행기가 지나갈 때 '쾅' 하는 소닉 붐이 들리는 까닭이에요. 음원 속력을 340 m/s 이상으로 올려 확인해 보세요.</p></details>
+      <details class="q"><summary><span class="qnum">Q3</span>기타 줄을 손가락으로 누르면 음이 높아지는 까닭은?</summary><p>진동하는 줄의 길이 L이 짧아지면 기본 진동의 파장(2L)이 짧아져요. 줄의 파동 속력이 같으므로 진동수 f = v/2L이 커져 높은 음이 나요.</p></details>
+    </div>
+  </section>
+  <footer class="site" data-footer data-extra="공기 중 소리의 속력 340 m/s, 관찰자는 정지. 줄의 파동 속력 286 m/s(기타 줄 예시). 관 끝 보정은 무시."></footer>
+</div>
+<script>
+(() => {
+const {C, $, canvas, axes, line, arrow, label} = Kit;
+const S = canvas($('scene')), G = canvas($('graph')), TAU = Math.PI * 2, VSND = 340, VSTR = 286;
+const st = {mode: 'doppler', vs: 100, f0: 440, kind: 'string', n: 1, L: .65, t: 0, fronts: [], last: 0, sx: 0};
+let AC = null; const ac = () => { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); return AC; };
+/* ===== 1. 도플러 효과 ===== */
+const fFront = () => st.vs < VSND ? st.f0 * VSND / (VSND - st.vs) : Infinity, fBack = () => st.f0 * VSND / (VSND + st.vs);
+function stepD(dt){ const W = S.w, sc = W / 700; // 1 px = 1/sc m... 화면 700 m
+  const held = srcDrag.active != null; // 잡고 있는 동안 음원은 멈추고 소리도 새로 내지 않음 — 이미 퍼진 파면만 계속 퍼짐
+  st.t += dt * .25; if (!held) st.sx += st.vs * dt * .25; if (st.sx > 620) { st.sx = 60; st.fronts = []; }
+  if (!held && st.t - st.last > .25) { st.last = st.t; st.fronts.push({x: st.sx, t: st.t}); } st.fronts = st.fronts.filter(f => (st.t - f.t) * VSND < 900); }
+function drawD(){ const g = S.g, W = S.w, H = S.h, sc = W / 700, cy = H * .5, road = cy + 26, dk = LD.dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+  // 거리 풍경: 하늘 · 건물 실루엣 · 도로 · 보도
+  const sky = g.createLinearGradient(0, 0, 0, road); sky.addColorStop(0, dk ? '#142030' : '#cfe3f5'); sky.addColorStop(1, dk ? '#1f2d3d' : '#eef5fb'); g.fillStyle = sky; g.fillRect(0, 0, W, road);
+  g.fillStyle = dk ? 'rgba(255,255,255,.05)' : 'rgba(60,80,100,.12)'; for (let i = 0; i < 14; i++) { const bw = W / 14, bh = H * (.12 + ((i * 37) % 11) / 40); g.fillRect(i * bw + 2, road - 14 - bh, bw - 6, bh); }
+  g.fillStyle = dk ? '#2b3138' : '#b9c0c6'; g.fillRect(0, road - 14, W, 14); g.fillStyle = dk ? '#1c2126' : '#454c53'; g.fillRect(0, road, W, H - road); g.fillStyle = 'rgba(255,255,255,.7)'; for (let x = (-(st.t * 40) % 60); x < W; x += 60) g.fillRect(x, road + (H - road) * .45, 30, 4);
+  // 파면: 음원이 내보낸 위치를 중심으로 퍼지는 원 (오래된 것일수록 흐리게)
+  st.fronts.forEach(f => { const r = (st.t - f.t) * VSND * sc, al = Math.max(.08, .7 - r / W); g.strokeStyle = `rgba(${dk ? '120,170,255' : '40,90,190'},${al})`; g.lineWidth = 2; g.beginPath(); g.arc(f.x * sc, cy, r, 0, TAU); g.stroke(); });
+  if (st.vs > VSND && st.fronts.length > 2) { const ang = Math.asin(VSND / st.vs), x = st.sx * sc, Lc = W; g.strokeStyle = C.hot; g.lineWidth = 3; g.beginPath(); g.moveTo(x - Lc * Math.cos(ang), cy - Lc * Math.sin(ang)); g.lineTo(x, cy); g.lineTo(x - Lc * Math.cos(ang), cy + Lc * Math.sin(ang)); g.stroke(); label(g, `마하 원뿔 (반각 ${(ang * 180 / Math.PI).toFixed(0)}°)`, x - 90, cy - 70, {size: 12, weight: 700, color: C.hot}); }
+  // 음원: 구급차(소리보다 느릴 때) / 제트기(빠를 때)
+  const x = st.sx * sc; g.save(); g.translate(x, cy);
+  if (st.vs < 250) { g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(0, 22, 34, 5, 0, 0, TAU); g.fill(); g.fillStyle = '#f7f7f5'; LD.rr(g, -34, -16, 50, 32, 4); g.fill(); LD.rr(g, 14, -6, 22, 22, 4); g.fill(); g.fillStyle = '#9cc3e6'; LD.rr(g, 20, -2, 12, 9, 2); g.fill(); g.fillStyle = '#d0342c'; g.fillRect(-34, 2, 70, 5); g.fillRect(-14, -12, 4, 12); g.fillRect(-18, -8, 12, 4);
+    const on = Math.floor(st.t * 8) % 2; g.fillStyle = on ? '#ff3b30' : '#3b7bff'; g.shadowColor = g.fillStyle; g.shadowBlur = 12; LD.rr(g, -8, -22, 12, 6, 2); g.fill(); g.shadowBlur = 0; g.fillStyle = '#222'; [[-22, 16], [24, 16]].forEach(([a, b]) => { g.beginPath(); g.arc(a, b, 6, 0, TAU); g.fill(); }); }
+  else { g.fillStyle = '#c9d1d8'; g.beginPath(); g.moveTo(40, 0); g.lineTo(-30, -7); g.lineTo(-36, 0); g.lineTo(-30, 7); g.closePath(); g.fill(); g.fillStyle = '#9aa5ae'; g.beginPath(); g.moveTo(4, 0); g.lineTo(-18, -26); g.lineTo(-26, -26); g.lineTo(-12, 0); g.lineTo(-26, 26); g.lineTo(-18, 26); g.closePath(); g.fill(); g.fillStyle = '#5d8fc0'; g.beginPath(); g.ellipse(22, -2, 7, 3, 0, 0, TAU); g.fill(); }
+  g.restore(); const ax = x + 40 + Math.max(6, st.vs * .2); arrow(g, x + 40, cy - 30, ax, cy - 30, dk ? '#e6eef6' : C.ink, 2);
+  /* 끌기 손잡이: 음원(위치)·화살표 끝(속력) */ const hv = srcDrag.hover ?? srcDrag.active; g.strokeStyle = dk ? '#e6eef6' : C.ink; g.lineWidth = 2; g.beginPath(); g.arc(ax, cy - 30, 8, 0, TAU); g.stroke();
+  if (hv != null) { g.setLineDash([4, 3]); g.lineWidth = 1.5; g.beginPath(); hv === 'v' ? g.arc(ax, cy - 30, 13, 0, TAU) : g.rect(x - 42, cy - 30, 84, 58); g.stroke(); g.setLineDash([]); }
+  // 관찰자 (보도 위)
+  [[W - 30, '앞 관찰자', fFront()], [30, '뒤 관찰자', fBack()]].forEach(([px, n, f]) => { LD.iconAt(g, 'person', px, road - 34, 44); const right = px > W / 2; g.fillStyle = dk ? 'rgba(22,32,42,.85)' : 'rgba(255,255,255,.9)'; LD.rr(g, right ? px - 92 : px - 8, road - 108, 100, 44, 8); g.fill(); label(g, n, right ? px + 4 : px - 2, road - 96, {size: 11, weight: 700, align: right ? 'right' : 'left'}); label(g, isFinite(f) ? `${f.toFixed(0)} Hz ${f > st.f0 ? '▲ 높게' : '▼ 낮게'}` : '충격파', right ? px + 4 : px - 2, road - 78, {size: 12, weight: 700, color: f > st.f0 ? C.hot : C.phy, align: right ? 'right' : 'left'}); });
+  label(g, `음원 ${st.f0} Hz, ${st.vs} m/s (마하 ${(st.vs / VSND).toFixed(2)}) · 파면 사이 거리: 앞은 좁고 뒤는 넓다`, W / 2, 18, {size: 13, weight: 700}); }
+const srcDrag = Kit.grab(S.cv, {hit: (x, y) => { if (st.mode !== 'doppler') return null; const sc = S.w / 700, sx = st.sx * sc, cy = S.h * .5, ax = sx + 40 + Math.max(6, st.vs * .2);
+    if (Math.hypot(x - ax, y - (cy - 30)) < 22) return 'v'; return Math.abs(x - sx) < 42 && Math.abs(y - cy) < 30 ? 's' : null; },
+  move: (t, x) => { const sc = S.w / 700; if (t === 'v') Kit.setRange('vs', (x - st.sx * sc - 40) / .2); else st.sx = Math.max(40, Math.min(600, x / sc)); }});
+function playPass(){ const a = ac(), o = a.createOscillator(), gn = a.createGain(), t0 = a.currentTime, dur = 3; o.type = 'triangle'; const v = Math.min(st.vs, VSND - 20);
+  // 관찰자 옆 10 m를 지나가는 음원: 시선 방향 속도 성분으로 진동수 계산
+  for (let i = 0; i <= 60; i++) { const tt = i / 60 * dur, x = (tt - dur / 2) * v, vr = -v * x / Math.hypot(x, 10), f = st.f0 * VSND / (VSND - vr); o.frequency.setValueAtTime(f, t0 + tt); const amp = .25 / (1 + Math.abs(x) / 60); gn.gain.setValueAtTime(amp, t0 + tt); }
+  gn.gain.setValueAtTime(0, t0 + dur); o.connect(gn).connect(a.destination); o.start(t0); o.stop(t0 + dur + .05); }
+/* ===== 2. 정상파 ===== */
+const vW = () => st.kind === 'string' ? VSTR : VSND, harm = () => st.kind === 'closed' ? 2 * st.n - 1 : st.n, lam = () => st.kind === 'closed' ? 4 * st.L / harm() : 2 * st.L / st.n, fr = () => vW() / lam();
+function yAt(x, t){ // x: 0..L, 반환: 변위(상대) — 줄은 변위, 관은 공기 변위
+  const k = TAU / lam(), w = TAU * 1.2; // 화면용 느린 진동
+  if (st.kind === 'string') return Math.sin(k * x) * Math.cos(w * t); if (st.kind === 'open') return Math.cos(k * x) * Math.cos(w * t); return Math.cos(k * x) * Math.cos(w * t); }
+function drawS(){ const g = S.g, W = S.w, H = S.h, x0 = W * .1, x1 = W * .9, cy = H * .45, A = H * .2, len = x1 - x0, t = st.t, X = x => x0 + x / st.L * len;
+  const dk = LD.dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark';
+  if (st.kind === 'string') { /* 기타처럼: 나무 판 위 두 받침(브리지) 사이에 팽팽한 줄 */ const wg = g.createLinearGradient(0, cy + A + 10, 0, cy + A + 46); wg.addColorStop(0, '#b07a45'); wg.addColorStop(1, '#7a4f28'); g.fillStyle = wg; LD.rr(g, x0 - 40, cy + A + 10, len + 80, 36, 8); g.fill(); g.strokeStyle = 'rgba(60,30,10,.25)'; g.lineWidth = 1; for (let i = 0; i < 5; i++) { g.beginPath(); g.moveTo(x0 - 36, cy + A + 16 + i * 6); g.bezierCurveTo(x0 + len * .3, cy + A + 12 + i * 6, x0 + len * .7, cy + A + 22 + i * 6, x1 + 36, cy + A + 16 + i * 6); g.stroke(); }
+    [x0, x1].forEach(x => { g.fillStyle = '#efe4cc'; g.beginPath(); g.moveTo(x - 9, cy + A + 10); g.lineTo(x - 3, cy - 2); g.lineTo(x + 3, cy - 2); g.lineTo(x + 9, cy + A + 10); g.closePath(); g.fill(); g.strokeStyle = 'rgba(0,0,0,.25)'; g.stroke(); }); }
+  else { /* 유리관 + 공기 분자: 분자가 실제로 앞뒤(관 방향)로 움직이는 모습. 촘촘한 곳 = 압력 높음 */ const tg = g.createLinearGradient(0, cy - A - 16, 0, cy + A + 16); tg.addColorStop(0, 'rgba(200,225,245,.55)'); tg.addColorStop(.5, 'rgba(235,245,255,.25)'); tg.addColorStop(1, 'rgba(180,210,235,.55)'); g.fillStyle = tg; g.fillRect(x0, cy - A - 14, len, 2 * A + 28);
+    g.fillStyle = dk ? 'rgba(160,200,255,.75)' : 'rgba(40,90,170,.6)'; for (let i = 0; i <= 64; i++) for (let j = 0; j < 7; j++) { const xx = st.L * (i + (j % 2) * .5) / 64; if (xx > st.L) continue; const d = yAt(xx, t) * st.L * .07; g.beginPath(); g.arc(X(Math.min(st.L, Math.max(0, xx + d))), cy - A + 6 + j * (2 * A - 12) / 6, 2.1, 0, TAU); g.fill(); }
+    g.strokeStyle = dk ? '#cfe0f0' : '#41566b'; g.lineWidth = 3; g.beginPath(); g.moveTo(x0, cy - A - 14); g.lineTo(x1, cy - A - 14); g.moveTo(x0, cy + A + 14); g.lineTo(x1, cy + A + 14); g.stroke(); if (st.kind === 'closed') { g.fillStyle = dk ? '#cfe0f0' : '#41566b'; g.fillRect(x1, cy - A - 16, 8, 2 * A + 32); } label(g, st.kind === 'closed' ? '열린 끝 · · · 닫힌 끝' : '열린 끝 · · · 열린 끝', W / 2, cy + A + 32, {size: 11, color: C.muted}); }
+  // 진행파 두 개 (흐리게)
+  if (st.kind === 'string') { const k = TAU / lam(), w = TAU * 1.2; [[1, 'rgba(47,111,208,.35)'], [-1, 'rgba(224,83,63,.35)']].forEach(([d, c]) => { g.strokeStyle = c; g.lineWidth = 1.5; g.beginPath(); for (let i = 0; i <= 200; i++) { const x = st.L * i / 200, y = .5 * Math.sin(k * x - d * w * t); i ? g.lineTo(X(x), cy - y * A) : g.moveTo(X(x), cy - y * A); } g.stroke(); }); }
+  // 포락선
+  g.strokeStyle = C.grid; g.setLineDash([3, 3]); [1, -1].forEach(s => { g.beginPath(); for (let i = 0; i <= 200; i++) { const x = st.L * i / 200, e = st.kind === 'string' ? Math.abs(Math.sin(TAU / lam() * x)) : Math.abs(Math.cos(TAU / lam() * x)); i ? g.lineTo(X(x), cy - s * e * A) : g.moveTo(X(x), cy - s * e * A); } g.stroke(); }); g.setLineDash([]);
+  g.strokeStyle = st.kind === 'string' ? (dk ? '#e8e2d0' : '#6e6a60') : C.accent; g.lineWidth = st.kind === 'string' ? 3.5 : 2; g.beginPath(); for (let i = 0; i <= 300; i++) { const x = st.L * i / 300, y = yAt(x, t); i ? g.lineTo(X(x), cy - y * A) : g.moveTo(X(x), cy - y * A); } g.stroke();
+  // 마디·배
+  const nodes = []; for (let m = 0; m <= 12; m++) { const xn = st.kind === 'string' ? m * lam() / 2 : (m + .5) * lam() / 2; if (xn <= st.L + 1e-9) nodes.push(xn); } nodes.forEach(xn => { g.fillStyle = C.hot; g.beginPath(); g.arc(X(xn), cy, 5, 0, TAU); g.fill(); });
+  label(g, '● 마디 (진동하지 않는 곳)', x0, H * .9, {size: 11, color: C.hot, align: 'left', weight: 700}); label(g, `파장 λ = ${lam().toFixed(3)} m · 진동수 ${fr().toFixed(0)} Hz`, x1, H * .9, {size: 12, weight: 700, align: 'right'});
+  if (st.kind !== 'string') label(g, '점: 공기 분자(관 방향으로 진동) · 선: 분자의 변위 그래프 — 열린 끝은 배, 닫힌 끝은 마디', W / 2, 16, {size: 11, color: C.muted}); else label(g, '파랑·빨강: 반대로 진행하는 두 파동 → 굵은 선: 합성파(정상파)', W / 2, 16, {size: 11, color: C.muted}); }
+function playTone(){ const a = ac(), o = a.createOscillator(), gn = a.createGain(), t0 = a.currentTime; o.type = 'sine'; o.frequency.value = fr(); gn.gain.setValueAtTime(0, t0); gn.gain.linearRampToValueAtTime(.25, t0 + .05); gn.gain.exponentialRampToValueAtTime(.001, t0 + 1.6); o.connect(gn).connect(a.destination); o.start(t0); o.stop(t0 + 1.7); }
+/* ===== 그래프·표 ===== */
+function drawGraph(){ const g = G.g;
+  if (st.mode === 'doppler') { const m = axes(G, {x: [0, 330, 30, '음원 속력 (m/s)'], y: [0, 3000, 500, '들리는 진동수 (Hz)']}); const P1 = [], P2 = []; for (let v = 0; v <= 330; v += 2) { P1.push([v, Math.min(3000, st.f0 * VSND / (VSND - v))]); P2.push([v, st.f0 * VSND / (VSND + v)]); } line(G, P1, m, C.hot, 2.5); line(G, P2, m, C.phy, 2.5); label(g, '빨강: 앞(다가옴) · 파랑: 뒤(멀어짐)', m.X(110), m.Y(2700), {size: 10, color: C.muted}); if (st.vs <= 330) { g.fillStyle = C.hot; g.beginPath(); g.arc(m.X(st.vs), m.Y(Math.min(3000, fFront())), 5, 0, TAU); g.fill(); g.fillStyle = C.phy; g.beginPath(); g.arc(m.X(st.vs), m.Y(fBack()), 5, 0, TAU); g.fill(); } }
+  else { const m = axes(G, {x: [0, 6.5, 1, '배수 n'], y: [0, 2000, 250, '진동수 (Hz)']}); for (let n = 1; n <= 6; n++) { const h = st.kind === 'closed' ? 2 * n - 1 : n, f = vW() * h / (st.kind === 'closed' ? 4 * st.L : 2 * st.L); g.fillStyle = n === st.n ? C.accent : 'rgba(47,111,208,.35)'; g.fillRect(m.X(n) - 12, m.Y(Math.min(2000, f)), 24, m.Y(0) - m.Y(Math.min(2000, f))); label(g, f.toFixed(0), m.X(n), m.Y(Math.min(2000, f)) - 8, {size: 10}); } } }
+function render(){ const s = $('stats'), th = $('thead'), tb = $('tbody'), set = (gt, gs, tt) => { $('gTitle').textContent = gt; $('gSub').textContent = gs; $('tTitle').textContent = tt; };
+  if (st.mode === 'doppler') { s.innerHTML = `<div><b>${isFinite(fFront()) ? fFront().toFixed(0) + ' Hz' : '충격파'}</b><span>앞 관찰자 (다가옴)</span></div><div><b>${fBack().toFixed(0)} Hz</b><span>뒤 관찰자 (멀어짐)</span></div><div><b>${(VSND / st.f0).toFixed(3)} m</b><span>원래 파장</span></div><div><b>${((VSND - st.vs) / st.f0).toFixed(3)} m</b><span>앞쪽 파장</span></div>`;
+    $('explain').innerHTML = '<b>도플러 효과</b>: 음원이나 관찰자가 움직이면 관찰되는 진동수가 달라지는 현상. 음원이 다가오면 f′ = f·v/(v − vₛ)로 높아지고, 멀어지면 f′ = f·v/(v + vₛ)로 낮아져요. 음원 앞쪽은 파면이 촘촘해져(파장이 짧아져) 높은 소리가 나요.'; $('tip').textContent = '[지나가는 소리 듣기]: 음원이 내 옆을 지나갈 때 실제로 들리는 소리를 재생해요 (음속보다 느릴 때). 스피드건, 도플러 초음파, 별의 적색 편이도 같은 원리예요.';
+    th.innerHTML = '<tr><th>음원 속력 (m/s)</th><th>앞 (Hz)</th><th>뒤 (Hz)</th></tr>'; tb.innerHTML = [0, 20, 40, 85, 170].map(v => `<tr><td>${v}</td><td>${(st.f0 * VSND / (VSND - v)).toFixed(0)}</td><td>${(st.f0 * VSND / (VSND + v)).toFixed(0)}</td></tr>`).join(''); set('음원 속력과 들리는 진동수', `음원 ${st.f0} Hz, 음속 340 m/s`, `음원 속력에 따른 진동수 (${st.f0} Hz)`); }
+  else { const kn = {string: '줄 (양끝 고정)', open: '열린 관', closed: '닫힌 관 (한쪽 막힘)'}[st.kind]; s.innerHTML = `<div><b>${fr().toFixed(0)} Hz</b><span>${harm()}배 진동의 진동수</span></div><div><b>${lam().toFixed(3)} m</b><span>파장</span></div><div><b>${vW()} m/s</b><span>파동 속력</span></div><div><b>${(vW() / (st.kind === 'closed' ? 4 * st.L : 2 * st.L)).toFixed(0)} Hz</b><span>기본 진동수</span></div>`;
+    $('explain').innerHTML = '<b>정상파</b>: 진폭과 진동수가 같은 두 파동이 반대 방향으로 진행하며 겹쳐, 제자리에서 진동하는 것처럼 보이는 파동. 진동하지 않는 <b>마디</b>와 크게 진동하는 <b>배</b>가 생겨요. 양끝 고정 줄과 열린 관: λₙ = 2L/n, fₙ = nv/2L. 닫힌 관: 홀수배만 생겨 fₙ = (2n−1)v/4L.'; $('tip').textContent = '관악기·현악기는 정상파의 공명으로 소리를 내요. 같은 길이에서 닫힌 관의 기본음은 열린 관보다 한 옥타브(진동수 1/2) 낮아요.';
+    th.innerHTML = '<tr><th>배수</th><th>파장 (m)</th><th>진동수 (Hz)</th></tr>'; tb.innerHTML = [1, 2, 3, 4].map(n => { const h = st.kind === 'closed' ? 2 * n - 1 : n, l = st.kind === 'closed' ? 4 * st.L / h : 2 * st.L / h; return `<tr><td>${h}배</td><td>${l.toFixed(3)}</td><td>${(vW() / l).toFixed(0)}</td></tr>`; }).join(''); set('배수와 진동수', `${kn}, L = ${st.L.toFixed(2)} m`, `${kn}의 정상파`); } }
+const bind = (id, k, f) => { $(id).oninput = e => { st[k] = +e.target.value; $(id + 'Out').textContent = f(st[k]); if (k === 'vs') { st.fronts = []; st.sx = 60; } render(); }; };
+bind('vs', 'vs', v => v + ' m/s'); bind('f0', 'f0', v => v + ' Hz'); bind('hn', 'n', v => v); bind('sL', 'L', v => v.toFixed(2) + ' m');
+Kit.seg($('kindSeg'), 'kind', v => { st.kind = v; $('hnOut').textContent = st.n; render(); })('string');
+$('listen').onclick = playPass; $('tone').onclick = playTone;
+/* ===== 1. 탄성파의 진행, 투과와 반사 (새 모드) ===== */
+{
+const PU = {bd: 'fixed', t: 0, A: 1, w: .35, f: 2, kind: 'pulse'};
+const BD = {fixed: ['고정단 (벽에 묶음)', -1, 0, 1], free: ['자유단 (고리로 자유롭게)', 1, 0, 1], l2h: ['가벼운 줄 → 무거운 줄', 0, 4, 1], h2l: ['무거운 줄 → 가벼운 줄', 0, .25, 1]};
+const coef = () => { const b = BD[PU.bd]; if (!b[2]) return {r: b[1], tau: 0, v2: 1}; const Z = Math.sqrt(b[2]); return {r: (1 - Z) / (1 + Z), tau: 2 / (1 + Z), v2: 1 / Z}; };
+const x0 = -3.2, v1 = 1.6;
+const gp = u => PU.kind === 'pulse' ? Math.exp(-u * u / (2 * PU.w * PU.w)) : (u < 0 && u > -6 ? Math.sin(TAU * u / (v1 / PU.f)) * Math.min(1, -u * 2) : 0);
+function y(x, t){ const {r, tau, v2} = coef(); if (t < 0) return 0; const s = x0 + v1 * t;
+  if (x <= 0) return gp(x - s) + r * gp(-x - s);
+  return BD[PU.bd][2] ? tau * gp(x * v1 / v2 - s) : 0; }
+const X = {
+  step(dt){ if (PU.t >= 0) { PU.t += dt; if (PU.t > 8.5) PU.t = 0; } },   // 처음부터 시범으로 흔들고, 끝나면 다시
+  draw(){ const g = S.g, W = S.w, H = S.h, cy = H * .48, sx = W / 8.4, X0 = W * .55, Xp = x => X0 + x * sx, amp = H * .2, b = BD[PU.bd];
+    const dk = LD.dark = matchMedia('(prefers-color-scheme: dark)').matches && document.documentElement.dataset.theme !== 'light' || document.documentElement.dataset.theme === 'dark'; LD.k = Math.max(1, 560 / Math.max(W, 1)); LD.bg(g, W, H, {top: H * .84});
+    const rope = (x0r, x1r, w, c1, c2) => { const path = () => { g.beginPath(); for (let x = x0r; x <= x1r + 1e-9; x += .02) { const yy = cy - y(x, PU.t) * amp; x === x0r ? g.moveTo(Xp(x), yy) : g.lineTo(Xp(x), yy); } }; g.lineCap = 'round'; g.lineJoin = 'round'; path(); g.strokeStyle = c2; g.lineWidth = w + 3; g.stroke(); path(); g.strokeStyle = c1; g.lineWidth = w; g.stroke(); g.save(); g.translate(0, -w * .25); path(); g.strokeStyle = 'rgba(255,240,210,.45)'; g.lineWidth = Math.max(1, w * .3); g.stroke(); g.restore(); };
+    const Lmax = b[2] ? 3.6 : 0, wL = b[2] === 4 ? 2 : 4, wR = b[2] === 4 ? 4.5 : b[2] ? 1.5 : 0;
+    rope(-4.4, 0, wL + 2, '#c99a5c', '#6b4a25');
+    if (b[2]) { rope(0, Lmax, wR + 2, '#8a5a22', '#3e2810'); g.fillStyle = C.accent; g.beginPath(); g.arc(Xp(0), cy - y(0, PU.t) * amp, 5, 0, TAU); g.fill(); label(g, '두 줄의 경계', Xp(0), cy + amp + 30, {size: 11, color: C.muted}); }
+    else if (PU.bd === 'fixed') { /* 벽돌 벽에 고정 */ const bx = Xp(0), bt = cy - amp * 1.6, bh = amp * 3.2 + (H * .84 - cy - amp * 1.6); g.fillStyle = dk ? '#6b3f32' : '#b5603f'; g.fillRect(bx, bt, W - bx, bh); g.strokeStyle = dk ? 'rgba(0,0,0,.35)' : 'rgba(255,240,230,.65)'; g.lineWidth = 2; for (let r = 0; r * 22 < bh; r++) { g.beginPath(); g.moveTo(bx, bt + r * 22); g.lineTo(W, bt + r * 22); g.stroke(); for (let c = (r % 2) * 24; bx + c < W; c += 48) { g.beginPath(); g.moveTo(bx + c, bt + r * 22); g.lineTo(bx + c, bt + r * 22 + 22); g.stroke(); } } g.fillStyle = '#9aa3ab'; g.beginPath(); g.arc(bx + 2, cy, 6, 0, TAU); g.fill(); }
+    else { g.fillStyle = '#888'; g.fillRect(Xp(0) + 8, cy - amp * 1.4, 6, amp * 2.8); g.strokeStyle = C.accent; g.lineWidth = 3; g.beginPath(); g.arc(Xp(0) + 4, cy - y(0, PU.t) * amp, 7, 0, TAU); g.stroke(); }
+    { const hx = Xp(-4.4), hy = cy - y(-4.4, PU.t) * amp; g.fillStyle = '#f0c8a8'; g.beginPath(); g.ellipse(hx - 2, hy, 11, 9, 0, 0, TAU); g.fill(); g.strokeStyle = 'rgba(120,70,40,.4)'; g.lineWidth = 1; g.stroke(); label(g, '손', hx + 4, hy + 24, {size: 11, color: C.muted}); }
+    label(g, b[0], W / 2, 22, {size: 15, weight: 700, color: C.accent});
+    const {r, tau} = coef(); label(g, r < 0 ? '반사파: 뒤집혀서 돌아온다 (위상 반대)' : r > 0 ? '반사파: 같은 모양으로 돌아온다 (위상 같음)' : '', W / 2, H - 40, {size: 13, weight: 700, color: '#ff8a70'});
+    if (b[2]) label(g, `투과파: ${b[2] > 1 ? '느려지고 작아진다' : '빨라지고 커진다'} · 반사파: ${r < 0 ? '뒤집힘' : '그대로'}`, W / 2, H - 16, {size: 12, color: '#fff'}); else label(g, '줄 끝에서 모두 반사된다', W / 2, H - 16, {size: 12, color: '#fff'});
+    this.graph(); },
+  graph(){ const g = G.g, m = axes(G, {x: [0, 7, 1, '시간 (s)'], y: [-1.5, 1.5, .5, '변위 (상대)']}), P = [], Q = []; for (let t = 0; t <= 7; t += .02) { P.push([t, y(-1.5, t)]); if (BD[PU.bd][2]) Q.push([t, y(1.2, t)]); } line(G, P, m, C.phy, 2.2); line(G, Q, m, '#7a4f12', 2.2); if (PU.t >= 0) { g.strokeStyle = C.hot; g.beginPath(); g.moveTo(m.X(PU.t), m.Y(-1.5)); g.lineTo(m.X(PU.t), m.Y(1.5)); g.stroke(); }
+    label(g, '파랑: 경계 왼쪽 1.5칸 지점 · 갈색: 경계 오른쪽 지점', m.X(3.5), m.Y(1.35), {size: 10, color: C.muted}); },
+  render(){ const {r, tau, v2} = coef(); Kit.panel({stats: [[r.toFixed(2), '반사파 진폭 (입사파 = 1)'], [BD[PU.bd][2] ? tau.toFixed(2) : '—', '투과파 진폭'], [BD[PU.bd][2] ? (v2).toFixed(2) + ' 배' : '—', '투과파의 속력']],
+    explain: '<b>탄성파</b>는 매질이 진동하며 에너지를 전달하는 파동이에요. 성질이 다른 매질의 <b>경계</b>에서 일부는 <b>반사</b>, 일부는 <b>투과</b>해요. 파동이 느린(무거운·단단히 고정된) 쪽 경계에서 반사하면 <b>위상이 반대</b>(뒤집힘), 빠른(가벼운·자유로운) 쪽 경계에서 반사하면 위상이 그대로예요. 경계를 지나도 <b>진동수는 변하지 않고</b> 속력과 파장이 바뀌어요.', tip: '초음파 영상: 몸속 조직의 경계에서 반사되어 돌아오는 시간으로 깊이를, 반사의 세기로 조직의 차이를 알아내요.', g: ['시간에 따른 변위', ''], t: '경계와 반사파의 위상', head: ['경계', '반사파', '투과파'], rows: [['고정단', '위상 반대', '없음'], ['자유단', '위상 같음', '없음'], ['느린 매질 쪽으로', '위상 반대', '위상 같음, 느려짐'], ['빠른 매질 쪽으로', '위상 같음', '위상 같음, 빨라짐']]}); } };
+Kit.seg(Kit.$('puBd'), 'pub', v => { PU.bd = v; PU.t = 0; X.render(); })('fixed');
+Kit.seg(Kit.$('puKind'), 'puk', v => { PU.kind = v; PU.t = 0; X.render(); })('pulse');
+Kit.$('puGo').onclick = () => { PU.t = 0; };
+Kit.ex(st, {pulse: X});
+}
+/* ===== 3. 음파의 간섭과 소음 제어 (새 모드) ===== */
+{
+const IF = {f: 340, y: 0, anti: false, t: 0};
+const vs = 340, d = 2, L = 4; // 스피커 간격 2 m, 듣는 선까지 4 m
+const amp = y => { const r1 = Math.hypot(L, y - d / 2), r2 = Math.hypot(L, y + d / 2), k = TAU * IF.f / vs, ph = k * (r2 - r1) + (IF.anti ? Math.PI : 0); return {r1, r2, dr: r2 - r1, A: Math.abs(2 * Math.cos(ph / 2))}; };
+const X = {
+  step(dt){ IF.t += dt; },
+  draw(){ const g = S.g, W = S.w, H = S.h, sc = Math.min(W / 6.2, H / 7), ox = W * .1, oy = H / 2, P = (x, y) => [ox + x * sc, oy + y * sc], lam = vs / IF.f, ph = IF.t * 2.2;
+    g.fillStyle = C.surface; g.fillRect(0, 0, W, H);
+    // 간섭 무늬 (보강: 진함)
+    const step = 6; for (let px = ox; px < W; px += step) for (let py = 0; py < H; py += step) { const x = (px - ox) / sc, y = (py - oy) / sc; if (x < .05) continue; const r1 = Math.hypot(x, y - d / 2), r2 = Math.hypot(x, y + d / 2), k = TAU / lam, v = Math.cos(k * r1 - ph * TAU) + Math.cos(k * r2 - ph * TAU + (IF.anti ? Math.PI : 0)); g.fillStyle = v > 0 ? `rgba(47,111,208,${Math.min(.55, v * .28)})` : `rgba(224,83,63,${Math.min(.35, -v * .17)})`; g.fillRect(px, py, step, step); }
+    [[d / 2, '스피커 A'], [-d / 2, '스피커 B']].forEach(([y, n], i) => { const [x, yy] = P(0, y); g.fillStyle = C.ink; g.fillRect(x - 16, yy - 14, 16, 28); g.beginPath(); g.moveTo(x, yy - 8); g.lineTo(x + 10, yy - 18); g.lineTo(x + 10, yy + 18); g.lineTo(x, yy + 8); g.fill(); label(g, n + (i && IF.anti ? ' (반대 위상)' : ''), x - 8, yy + (y > 0 ? 30 : -30), {size: 11, weight: 700}); });
+    const [lx, ly0] = P(L, -3.2), [, ly1] = P(L, 3.2); g.strokeStyle = C.muted; g.setLineDash([4, 4]); g.beginPath(); g.moveTo(lx, ly0); g.lineTo(lx, ly1); g.stroke(); g.setLineDash([]);
+    const a = amp(IF.y), [hx, hy] = P(L, IF.y); g.strokeStyle = 'rgba(30,30,30,.4)'; g.beginPath(); g.moveTo(...P(0, d / 2)); g.lineTo(hx, hy); g.moveTo(...P(0, -d / 2)); g.lineTo(hx, hy); g.stroke();
+    g.fillStyle = C.surface; g.strokeStyle = C.ink; g.lineWidth = 2; g.beginPath(); g.arc(hx, hy, 12, 0, TAU); g.fill(); g.stroke(); LD.iconAt(g, 'headphone', hx, hy, 18); if (typeof earDrag !== 'undefined' && (earDrag.hover ?? earDrag.active) != null) { g.setLineDash([4, 3]); g.lineWidth = 1.5; g.beginPath(); g.arc(hx, hy, 19, 0, TAU); g.stroke(); g.setLineDash([]); }
+    label(g, `경로차 ${a.dr.toFixed(2)} m = 파장의 ${(a.dr / lam).toFixed(2)} 배`, W / 2, 20, {size: 13, weight: 700});
+    label(g, a.A > 1.6 ? '보강 간섭 — 크게 들린다' : a.A < .4 ? '상쇄 간섭 — 거의 안 들린다' : '중간 크기', W / 2, 42, {size: 15, weight: 700, color: a.A > 1.6 ? C.phy : a.A < .4 ? C.hot : C.ink});
+    label(g, '파랑: 압력이 높은 곳(마루) · 빨강: 낮은 곳(골) · 위에서 본 모습', W / 2, H - 10, {size: 10, color: C.muted});
+    this.graph(); },
+  graph(){ const g = G.g, half = G.w / 2, k = TAU * IF.f / vs, a = amp(IF.y), m1 = axes(G, {x: [0, 6, 1, '시간 (ms)'], y: [-2, 2, 1, '듣는 곳의 압력 변화']}, {R: half + 8}), A = [], B = [], Sm = [];
+    for (let t = 0; t <= 6; t += .02) { const w = TAU * IF.f * t / 1000, p1 = Math.cos(w - k * a.r1), p2 = Math.cos(w - k * a.r2 + (IF.anti ? Math.PI : 0)); A.push([t, p1]); B.push([t, p2]); Sm.push([t, p1 + p2]); }
+    line(G, A, m1, 'rgba(47,111,208,.5)', 1.2, [3, 3]); line(G, B, m1, 'rgba(224,83,63,.5)', 1.2, [3, 3]); line(G, Sm, m1, C.ink, 2.4);
+    const m2 = axes(G, {x: [-3.2, 3.2, .8, '듣는 위치 (m)'], y: [0, 2, .5, '소리의 진폭']}, {L: half + 48, keep: true}), P = []; for (let y = -3.2; y <= 3.2; y += .01) P.push([y, amp(y).A]); line(G, P, m2, C.accent, 2.2); g.fillStyle = C.hot; g.beginPath(); g.arc(m2.X(IF.y), m2.Y(a.A), 5, 0, TAU); g.fill(); },
+  render(){ const a = amp(IF.y), lam = vs / IF.f; Kit.panel({stats: [[`${lam.toFixed(2)} m`, '파장 (340 m/s ÷ 진동수)'], [`${a.dr.toFixed(2)} m`, '두 스피커까지의 경로차'], [`${a.A.toFixed(2)}`, '합성 진폭 (한 스피커 = 1)']],
+    explain: '<b>파동의 중첩</b>: 두 파동이 만나면 변위가 더해져요. 같은 위상으로 만나면(경로차 = 파장의 정수 배) <b>보강 간섭</b>으로 소리가 커지고, 반대 위상으로 만나면(경로차 = 반파장의 홀수 배) <b>상쇄 간섭</b>으로 작아져요. <b>능동 소음 제어</b>는 소음과 반대 위상의 소리를 만들어 상쇄 간섭을 일으켜요.', tip: '[반대 위상]을 켜고 두 스피커에서 같은 거리(가운데)에 서 보세요 — 노이즈 캔슬링 헤드폰의 원리예요. 진동수를 바꾸면 크게 들리는 곳의 간격도 바뀌어요.', g: ['시간에 따른 압력 변화 · 위치에 따른 진폭', '점선: 각 스피커의 소리, 굵은 선: 합성된 소리'], t: '간섭 조건', head: ['두 소리의 위상 관계', '경로차', '결과'], rows: [['같은 위상', '파장의 정수 배', '보강 (크게)'], ['같은 위상', '반파장의 홀수 배', '상쇄 (작게)'], ['반대 위상', '0 (같은 거리)', '상쇄 → 소음 제거']]}); } };
+Kit.$('ifF').oninput = e => { IF.f = +e.target.value; Kit.$('ifFOut').textContent = IF.f + ' Hz'; X.render(); };
+// 끌기(음파의 간섭): 헤드폰(듣는 사람)을 점선을 따라 위아래로 끌어 듣는 위치 바꾸기
+const ifGeo = () => { const sc = Math.min(S.w / 6.2, S.h / 7); return {sc, hx: S.w * .1 + L * sc, oy: S.h / 2}; };
+const earDrag = Kit.grab(S.cv, {hit: (x, y) => { if (st.mode !== 'interf') return null; const p = ifGeo(); return Math.hypot(x - p.hx, y - p.oy - IF.y * p.sc) < 24 ? 0 : null; },
+  move: (i, x, y) => { const p = ifGeo(); Kit.setRange('ifY', (y - p.oy) / p.sc); }});
+Kit.$('ifY').oninput = e => { IF.y = +e.target.value; Kit.$('ifYOut').textContent = IF.y.toFixed(2) + ' m'; X.render(); };
+Kit.$('ifAnti').onchange = e => { IF.anti = e.target.checked; X.render(); };
+Kit.ex(st, {interf: X});
+}
+/* ===== 3. 스마트폰 도플러 측정 (phone) — <탐구 활동> '스마트폰을 활용하여 도플러 효과 측정하기' =====
+   길가에 둔 스마트폰(소리 분석 앱)으로, 일정한 진동수 f₀의 소리를 내며 곧게 지나가는 탈것의 소리를 잰다. 탈것의 진동수·속력은 학생이 모른다(측정해서 구함).
+   모형: 음속 v = 331 + 0.6T (m/s). 낸 순간 위치에서 휴대폰을 향한 속도 성분 vᵣ로 f′ = f₀·v/(v − vᵣ), 들리는 시각 = 낸 시각 + 거리/v. 앱의 분해능 5 Hz와 잡음(±3 Hz)을 넣었다.
+   먼 앞(다가올 때) f₁ ≈ f₀·v/(v − vₛ), 먼 뒤(멀어질 때) f₂ ≈ f₀·v/(v + vₛ) → vₛ = v(f₁ − f₂)/(f₁ + f₂), f₀ = 2f₁f₂/(f₁ + f₂). 길에서 2 m 떨어져 있어 가까이 지날 때는 진동수가 빠르게 바뀐다. */
+{
+const VEH = {bike: ['자전거', 6], car: ['자동차', 16], train: ['기차', 28]};
+const PH = {k: 'car', T: 20, run: null, cur: 1, rows: [], rec: {}, show: false, seed: 1};
+const rnd = () => (PH.seed = (PH.seed * 16807) % 2147483647) / 2147483647;
+const vsnd = () => 331 + .6 * PH.T;
+function newRun(){ const [n, base] = VEH[PH.k]; const f0 = 1000 + Math.round(rnd() * 10) * 50, vs = Math.round(base * (.85 + rnd() * .3) * 10) / 10, v = vsnd(), D = 2, L = vs * 8, pts = [];
+  for (let te = 0; te <= 8; te += .02) { const x = -L / 2 + vs * te, r = Math.hypot(x, D), vr = vs * (-x / r), tr = te + r / v; if (tr > 8) break; const f = f0 * v / (v - vr); pts.push([tr, Math.round((f + (rnd() - .5) * 6) / 5) * 5]); }
+  PH.run = {f0, vs, v, pts, t0: performance.now() / 1000, L, D}; PH.rec = {}; PH.show = false; }
+const at = t => { const P = PH.run.pts; let best = P[0]; for (const p of P) if (Math.abs(p[0] - t) < Math.abs(best[0] - t)) best = p; return best; };
+const XP = {
+  enter(){ if (!PH.run) newRun(); },
+  draw(){ const g = S.g, W = S.w, H = S.h, R = PH.run; g.fillStyle = C.surface; g.fillRect(0, 0, W, H); if (!R) return; const el = Math.min(8, performance.now() / 1000 - R.t0), sc = W * .9 / R.L, cx = W / 2, ry = H * .38;
+    g.fillStyle = '#c8ccd4'; g.fillRect(0, ry - 26, W, 52); g.strokeStyle = '#fff'; g.setLineDash([18, 14]); g.lineWidth = 3; g.beginPath(); g.moveTo(0, ry); g.lineTo(W, ry); g.stroke(); g.setLineDash([]);
+    const ex = cx + (-R.L / 2 + R.vs * el) * sc; // 파면(낸 순간 위치가 중심)
+    for (let k = 1; k <= 14; k++) { const te = el - k * .18; if (te < 0) break; const x0 = cx + (-R.L / 2 + R.vs * te) * sc, rad = R.v * (el - te) * sc * .06; g.strokeStyle = `rgba(47,111,208,${.5 - k * .03})`; g.lineWidth = 1.5; g.beginPath(); g.arc(x0, ry, rad, 0, TAU); g.stroke(); }
+    g.fillStyle = PH.k === 'train' ? '#3a6ab8' : PH.k === 'car' ? '#d84a3a' : '#3a9a5a'; Kit.rr ? 0 : 0; g.fillRect(ex - (PH.k === 'train' ? 46 : PH.k === 'car' ? 24 : 12), ry - 12, PH.k === 'train' ? 92 : PH.k === 'car' ? 48 : 24, 24); label(g, '🔊', ex, ry + 5, {size: 14}); label(g, VEH[PH.k][0] + ' (스피커)', ex, ry - 20, {size: 11, weight: 700});
+    const py = ry + R.D * sc * 4 + 40; g.fillStyle = '#2a2a3a'; g.fillRect(cx - 14, py - 24, 28, 48); g.fillStyle = '#7ad0ff'; g.fillRect(cx - 11, py - 20, 22, 36); label(g, '스마트폰 (길에서 2 m)', cx, py + 40, {size: 11, weight: 700});
+    label(g, el < 8 ? `측정 중 ${el.toFixed(1)} s` : '측정 끝 — 아래 그래프(소리 분석 앱 화면)에서 값을 읽자', W / 2, 16, {size: 12, weight: 700}); label(g, `기온 ${PH.T} ℃ → 음속 약 ${vsnd().toFixed(0)} m/s`, 10, H - 10, {size: 11, align: 'left', color: C.muted}); this.graph(el); },
+  graph(el){ const g = G.g, R = PH.run; const fs = R.pts.map(p => p[1]), lo = Math.floor((Math.min(...fs) - 30) / 50) * 50, hi = Math.ceil((Math.max(...fs) + 30) / 50) * 50; const m = axes(G, {x: [0, 8, 1, '시간 (s)'], y: [lo, hi, Math.max(10, Math.round((hi - lo) / 5 / 10) * 10), '들린 진동수 (Hz)']});
+    g.fillStyle = C.hot; for (const p of R.pts) if (p[0] <= el) { g.fillRect(m.X(p[0]) - 1.5, m.Y(p[1]) - 1.5, 3, 3); }
+    const c = at(PH.cur); g.strokeStyle = C.accent; g.setLineDash([4, 3]); g.beginPath(); g.moveTo(m.X(PH.cur), m.Y(hi)); g.lineTo(m.X(PH.cur), m.Y(lo)); g.stroke(); g.setLineDash([]); if (c[0] <= el) label(g, `${c[1]} Hz`, m.X(PH.cur) + 6, m.Y(c[1]) - 8, {size: 12, weight: 700, color: C.accent, align: 'left'}); },
+  render(){ const rows = PH.rows, v = vsnd(), mean = k => rows.length ? rows.reduce((a, r) => a + r[k], 0) / rows.length : 0;
+    Kit.panel({stats: [[PH.rec.f1 ? PH.rec.f1 + ' Hz' : '—', '다가올 때 f₁'], [PH.rec.f2 ? PH.rec.f2 + ' Hz' : '—', '멀어질 때 f₂'], [rows.length ? mean('vs').toFixed(1) + ' m/s' : '—', '구한 속력(평균)']],
+      explain: '<b>탐구</b>: 소리 분석 앱 그래프에서 <b>멀리서 다가올 때</b>(앞쪽 평평한 부분)와 <b>멀어질 때</b>(뒤쪽 평평한 부분)의 진동수를 읽어 기록해요. 관찰자가 정지해 있으면 f₁ = f₀·v/(v − vₛ), f₂ = f₀·v/(v + vₛ)이므로 <b>vₛ = v(f₁ − f₂)/(f₁ + f₂)</b>, <b>f₀ = 2f₁f₂/(f₁ + f₂)</b>로 탈것의 속력과 스피커의 진동수를 구할 수 있어요. 같은 탈것으로 여러 번 재어 평균을 내 보세요.' + (PH.show ? `<br><b>정답</b>: f₀ = ${PH.run.f0} Hz, vₛ = ${PH.run.vs} m/s` : ''),
+      tip: '가운데(바로 앞을 지날 때)는 휴대폰을 향한 속도 성분이 빠르게 바뀌어 진동수가 쭉 내려가요 — 이 부분은 읽지 않아요. 앱의 분해능(5 Hz)과 주변 잡음, 길에서 떨어진 거리 때문에 오차가 생겨요(모의 실험).',
+      g: ['소리 분석 앱 화면 (시간–진동수)', '[읽을 시각]을 옮겨 앞·뒤의 평평한 부분 값을 읽자'], t: '측정 기록', head: ['회', 'f₁ (Hz)', 'f₂ (Hz)', '구한 f₀ (Hz)', '구한 vₛ (m/s)'],
+      rows: rows.map((r, i) => [i + 1, r.f1, r.f2, r.f0.toFixed(0), r.vs.toFixed(1)]).concat(rows.length > 1 ? [['평균', '', '', mean('f0').toFixed(0), mean('vs').toFixed(1)]] : [])}); }
+};
+const pushRow = () => { const {f1, f2} = PH.rec; if (!f1 || !f2) return; const v = vsnd(); PH.rows.push({f1, f2, f0: 2 * f1 * f2 / (f1 + f2), vs: v * (f1 - f2) / (f1 + f2)}); PH.rec = {}; };
+Kit.seg(Kit.$('phV'), 'ph', k => { PH.k = k; PH.rows = []; PH.seed = k.length * 97; newRun(); if (st.mode === 'phone') XP.render(); })('car');
+Kit.$('phT').oninput = e => { PH.T = +e.target.value; Kit.$('phTOut').textContent = PH.T + ' ℃'; XP.render(); };
+Kit.$('phGo').onclick = () => { newRun(); XP.render(); };
+Kit.$('phC').oninput = e => { PH.cur = +e.target.value; Kit.$('phCOut').textContent = PH.cur.toFixed(2) + ' s'; };
+Kit.$('phA').onclick = () => { PH.rec.f1 = at(PH.cur)[1]; pushRow(); XP.render(); };
+Kit.$('phB').onclick = () => { PH.rec.f2 = at(PH.cur)[1]; pushRow(); XP.render(); };
+Kit.$('phR').onclick = () => { PH.show = true; XP.render(); };
+Kit.ex(st, {phone: XP});
+}
+st.sx = 60; Kit.tabs(m => { st.mode = m; render(); }, ['doppler', 'stand']);
+Kit.loop(dt => { if (st.mode === 'doppler') stepD(dt); else st.t += dt; }, () => { S.g.fillStyle = C.surface; S.g.fillRect(0, 0, S.w, S.h); (st.mode === 'doppler' ? drawD : drawS)(); drawGraph(); });
+})();
+</script>
+</body>
+</html>
