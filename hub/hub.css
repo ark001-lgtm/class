@@ -60,9 +60,6 @@ h1, h2, h3, h4, p { margin: 0; }
 .btn.icon { width: 38px; padding: 0; }
 .btn svg { width: 19px; height: 19px; }
 select.btn { padding-right: 10px; }
-#btn-full .fs-out { display: none; }
-#btn-full[aria-pressed="true"] .fs-in { display: none; }
-#btn-full[aria-pressed="true"] .fs-out { display: inline; }
 
 /* 인사말 · 검색 */
 .intro { display: flex; flex-direction: column; gap: 12px; padding-top: 6px; }

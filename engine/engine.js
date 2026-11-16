@@ -1,12 +1,12 @@
 'use strict';
 /* 나의 수업 웹앱 : 수업 엔진 (2-3 열역학 제1법칙에서 떼어 냄)
-   무대(폭 1920) · 넘기기 · 빈칸 · 캔버스 그리기 도구 · 펜 필기 · 확대 · 전체 화면 · 테마.
+   무대(폭 1920) · 넘기기(위아래로 밀기) · 빈칸 · 캔버스 그리기 도구 · 펜 필기 · 확대 · 테마.
    소단원은 장면만 만든다 (lessons/<과목>/<소단원>/scenes.js). 합치기가 이 파일 + 장면 + start.js 를 HTML 하나로 묶는다. */
 /* ═══════════════ 바탕 : 무대 크기, 색, 캔버스, 반복 ═══════════════
-   장면은 늘 1920×976 크기로 그린다. 무대 높이는 화면 비율을 따른다 : 전자칠판(16:9)은 1080,
-   아이패드(가로 1180×820)처럼 덜 납작한 화면은 무대를 위아래로 늘려(최대 1400) 빈 띠 없이 꽉 채우고,
-   장면은 가운데 둔다. 늘어난 위아래 여백에도 펜슬로 쓸 수 있다. */
-const W0 = 1920, BAR_H = 104, SCENE_H = 976;
+   장면은 늘 1920×976 크기로 그린다. 무대 높이는 화면 비율을 따른다 : 머리줄 + 장면 + 아래 띠(TOOL_H, 왼쪽 아래 필기 도구 자리)가
+   최소 높이(1172)이고, 아이패드(가로 1180×820)처럼 덜 납작한 화면은 무대를 위아래로 늘려(최대 1400) 빈 띠 없이 꽉 채운다.
+   장면은 가운데 두되 아래 띠만큼은 늘 비워 필기 도구가 장면을 가리지 않는다. 늘어난 위아래 여백에도 펜슬로 쓸 수 있다. */
+const W0 = 1920, BAR_H = 104, SCENE_H = 976, TOOL_H = 92;
 let H0 = 1080;
 let SCALE = 1;
 let RES_Z = 1;              // 캔버스를 이 확대 배율에 맞춰 선명하게 그린다 (확대가 멈추면 맞춘다)
@@ -26,10 +26,11 @@ function fit() {
   const cs = getComputedStyle(frame);
   const pl = parseFloat(cs.paddingLeft) || 0, pr = parseFloat(cs.paddingRight) || 0, pt = parseFloat(cs.paddingTop) || 0, pb = parseFloat(cs.paddingBottom) || 0;
   const aw = Math.max(50, frame.clientWidth - pl - pr), ah = Math.max(50, frame.clientHeight - pt - pb);
-  H0 = Math.round(clamp(W0 * ah / aw, 1080, 1400));
-  VIEW_H = H0 - BAR_H; INK_H = VIEW_H; INK_OY = Math.round((VIEW_H - SCENE_H) / 2);
+  H0 = Math.round(clamp(W0 * ah / aw, BAR_H + SCENE_H + TOOL_H, 1400));
+  VIEW_H = H0 - BAR_H; INK_H = VIEW_H; INK_OY = Math.round(Math.min((VIEW_H - SCENE_H) / 2, VIEW_H - SCENE_H - TOOL_H));
   stage.style.height = H0 + 'px';
   zoomEl.style.height = VIEW_H + 'px';
+  peekPrev.style.height = peekNext.style.height = VIEW_H + 'px';
   document.getElementById('scene').style.marginTop = INK_OY + 'px';
   clampPan(); applyZoom();
   const s = Math.min(aw / W0, ah / H0);
@@ -44,7 +45,8 @@ const COL = {};
 let FONT_SANS = 'sans-serif', FONT_MONO = 'monospace';
 function readTheme() {
   const s = getComputedStyle(document.documentElement);
-  ['bg', 'panel', 'panel-2', 'ink', 'ink-2', 'muted', 'line', 'grid', 'heat', 'work', 'energy', 'cold', 'good', 'pen']
+  ['bg', 'panel', 'panel-2', 'ink', 'ink-2', 'muted', 'line', 'grid', 'heat', 'work', 'energy', 'cold', 'good', 'pen',
+    'ink-red', 'ink-blue', 'ink-black', 'ink-purple', 'ink-green']
     .forEach(function (k) { COL[k] = s.getPropertyValue('--' + k).trim(); });
   FONT_SANS = s.getPropertyValue('--f-sans').trim() || 'sans-serif';
   FONT_MONO = s.getPropertyValue('--f-mono').trim() || 'monospace';
@@ -276,11 +278,16 @@ const IS_IPAD = /iPad/.test(navigator.userAgent) || (/Macintosh/.test(navigator.
 const INK_W = 1920;
 let INK_H = SCENE_H, INK_OY = 0;   // 필기 층 높이(= 장면이 보이는 곳 높이), 장면이 아래로 밀린 만큼
 const PEN_W = 6, HL_W = 26, HL_ALPHA = 0.35, HL_COLOR = '#FFD60A', ERASE_R = 22, TAP_MS = 600;
+/** 굵기 단추 : 가늘게 · 보통 · 굵게 (장면 px). PEN_W · HL_W 는 굵기를 적지 않았던 예전 획 */
+const PEN_WS = [5, 8, 13], HL_WS = [18, 26, 38];
+/** 예전 획의 색 이름 → 지금 이름 */
+const OLD_INK = { pen: 'red', cold: 'blue', ink: 'black' };
+function inkColor(c) { return COL['ink-' + (OLD_INK[c] || c)] || COL.pen; }
 /** 이만큼(화면 px) 안 움직이면 '톡'. 손가락은 펜보다 흔들림이 커서 넉넉하게 */
 function tapPx(kind) { return kind === 'pen' ? 6 : 12; }
 const INK = {
   pages: {}, hist: {}, key: null,
-  tool: 'pen', color: 'pen',
+  tool: 'pen', color: 'red', size: 1,
   hand: false, handAuto: false, board: false, sawPen: false,
   active: null, synth: false, suppressUntil: 0, supX: 0, supY: 0,
 };
@@ -321,10 +328,10 @@ function syncInkKey() {
 }
 
 /* 그리기 */
-function setInkStyle(ctx, t, c) {
+function setInkStyle(ctx, t, c, w) {
   const hl = t === 'hl';
-  ctx.strokeStyle = ctx.fillStyle = hl ? HL_COLOR : (COL[c] || COL.pen);
-  ctx.lineWidth = hl ? HL_W : PEN_W; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.strokeStyle = ctx.fillStyle = hl ? HL_COLOR : inkColor(c);
+  ctx.lineWidth = w || (hl ? HL_W : PEN_W); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
 }
 /** 점들을 중점으로 잇는 매끈한 곡선. 형광펜은 한 번에 칠해 겹친 곳이 진해지지 않게 */
 function paintStroke(ctx, s) {
@@ -332,7 +339,7 @@ function paintStroke(ctx, s) {
   if (!Array.isArray(p) || p.length < 2) return;
   const n = Math.floor(p.length / 2);
   ctx.save();
-  setInkStyle(ctx, s.t, s.c);
+  setInkStyle(ctx, s.t, s.c, s.w);
   if (s.t === 'hl') ctx.globalAlpha = HL_ALPHA;
   if (n === 1) { ctx.beginPath(); ctx.arc(p[0], p[1], ctx.lineWidth / 2, 0, Math.PI * 2); ctx.fill(); ctx.restore(); return; }
   ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo((p[0] + p[2]) / 2, (p[1] + p[3]) / 2);
@@ -355,7 +362,7 @@ function liveBegin(a) {
 }
 function liveExtend(a) {
   const c = liveLayer.ctx, p = a.p, n = p.length / 2;
-  setInkStyle(c, a.t, a.c);
+  setInkStyle(c, a.t, a.c, a.w);
   for (let k = Math.max(1, a.drawn); k < n; k++) {
     c.beginPath();
     if (k === 1) { c.moveTo(p[0], p[1]); c.lineTo((p[0] + p[2]) / 2, (p[1] + p[3]) / 2); }
@@ -382,7 +389,7 @@ function segDist(px, py, ax, ay, bx, by) {
   return Math.hypot(px - ax - t * dx, py - ay - t * dy);
 }
 function hitStroke(s, x, y) {
-  const p = s.p, n = Math.floor(p.length / 2), rr = ERASE_R + (s.t === 'hl' ? HL_W : PEN_W) / 2;
+  const p = s.p, n = Math.floor(p.length / 2), rr = ERASE_R + (s.w || (s.t === 'hl' ? HL_W : PEN_W)) / 2;
   if (n === 1) return Math.hypot(p[0] - x, p[1] - y) <= rr;
   for (let k = 1; k < n; k++) if (segDist(x, y, p[2 * k - 2], p[2 * k - 1], p[2 * k], p[2 * k + 1]) <= rr) return true;
   return false;
@@ -427,7 +434,7 @@ function pushHist(act) {
 }
 function commitStroke(a) {
   const page = INK.pages[INK.key] || (INK.pages[INK.key] = []);
-  const s = { t: a.t, c: a.c, p: a.p };
+  const s = { t: a.t, c: a.c, w: a.w, p: a.p };
   page.push(s);
   pushHist({ type: 'add' });
   paintStroke(inkLayer.ctx, s);
@@ -454,10 +461,6 @@ function clearPage() {
   INK.pages[INK.key] = [];
   redrawInk(); saveInk();
 }
-function clearAllInk() {
-  INK.pages = {}; INK.hist = {};
-  redrawInk(); saveInk();
-}
 function abortInk() {
   INK.active = null;
   clearLayer(liveLayer);
@@ -465,12 +468,14 @@ function abortInk() {
 
 /* 도구 막대 */
 const toolHand = document.getElementById('tool-hand'), toolBoard = document.getElementById('tool-board');
-const pickBtns = Array.prototype.slice.call(document.querySelectorAll('.pen-tools .pick'));
+const pickBtns = Array.prototype.slice.call(document.querySelectorAll('.ink-tools .pick'));
+const sizeBtns = Array.prototype.slice.call(document.querySelectorAll('.ink-tools .size'));
 function syncTools() {
   pickBtns.forEach(function (b) {
     const on = b.dataset.tool === INK.tool && (INK.tool !== 'pen' || b.dataset.color === INK.color);
     b.setAttribute('aria-pressed', String(on));
   });
+  sizeBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(Number(b.dataset.size) === INK.size)); });
   toolHand.setAttribute('aria-pressed', String(INK.hand));
   toolBoard.setAttribute('aria-pressed', String(INK.board));
   document.body.classList.toggle('hand-on', INK.hand);
@@ -496,14 +501,20 @@ pickBtns.forEach(function (b) {
     syncTools();
   });
 });
+// 굵기 : 지우개를 들고 있었으면 펜으로 바꾼다
+sizeBtns.forEach(function (b) {
+  b.addEventListener('click', function () {
+    INK.size = Number(b.dataset.size);
+    if (INK.tool === 'eraser') INK.tool = 'pen';
+    if (!IS_IPAD && !INK.sawPen && !INK.hand) { INK.hand = true; INK.handAuto = true; }
+    syncTools();
+  });
+});
 toolHand.addEventListener('click', function () { INK.hand = !INK.hand; INK.handAuto = false; syncTools(); });
 toolBoard.addEventListener('click', function () { abortInk(); setBoard(!INK.board); });
 document.getElementById('tool-undo').addEventListener('click', undoInk);
-// 이 화면 필기 지우기. 안내 속 단추로 모든 화면의 필기도 한 번에 지울 수 있다 (다음 시간 수업 전에)
-document.getElementById('tool-clear').addEventListener('click', function () {
-  clearPage();
-  toast('이 화면의 필기를 지웠습니다. 되돌리기로 살릴 수 있어요.<br><button class="btn small" id="toast-all" type="button" style="margin-top:12px">모든 화면의 필기 지우기</button>', 6000);
-});
+// 이 화면 필기 모두 지우기 (안내 없이 바로. 잘못 눌렀으면 되돌리기로 살린다)
+document.getElementById('tool-clear').addEventListener('click', clearPage);
 
 /* 입력 */
 /** 화면 좌표 → 필기 좌표(장면 1920×976 기준, 위아래 여백은 음수 · 976 넘음). 확대해 있어도 내용 기준 자리에 남는다 */
@@ -539,7 +550,8 @@ stage.addEventListener('pointerdown', function (e) {
   const eraserEnd = e.pointerType === 'pen' && (e.button === 5 || (e.buttons & 32) === 32);
   INK.active = {
     id: e.pointerId, kind: e.pointerType, cx: e.clientX, cy: e.clientY, t0: performance.now(), moved: false,
-    t: eraserEnd ? 'eraser' : INK.tool, c: INK.color, p: [r1(pt.x), r1(pt.y)], erased: [], drawn: 0, ex: pt.x, ey: pt.y,
+    t: eraserEnd ? 'eraser' : INK.tool, c: INK.color, w: (INK.tool === 'hl' ? HL_WS : PEN_WS)[INK.size],
+    p: [r1(pt.x), r1(pt.y)], erased: [], drawn: 0, ex: pt.x, ey: pt.y,
   };
 }, true);
 stage.addEventListener('pointermove', function (e) {
@@ -762,7 +774,139 @@ viewEl.addEventListener('wheel', function (e) {
     e.preventDefault();
     ZT.x -= e.deltaX / SCALE; ZT.y -= e.deltaY / SCALE;
     clampPan(); applyZoom();
+  } else if (!INK.board) {
+    e.preventDefault();
+    wheelTurn(e);
   }
 }, { passive: false });
 // 아이패드 사파리 : 페이지 자체가 확대되지 않게 (확대는 위에서 직접 한다)
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (t) { document.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false }); });
+
+/* ═══════════════ 장면 넘기기 : 위아래로 밀기 (PDF 를 볼 때처럼) ═══════════════
+   · 손가락으로 화면을 위로 밀면 다음 장면, 아래로 밀면 이전 장면. 미는 동안 화면이 손가락을 따라오고,
+     다음(이전) 장면 이름표가 아래(위)에서 따라온다. 조금만 밀다 놓으면 제자리로 돌아간다.
+     아이패드는 손가락이 늘 넘기기(펜슬은 필기), 전자칠판은 [손 필기]를 껐을 때 손가락이 넘기기다.
+   · 마우스 휠 · 노트북 터치패드 쓸기, 키보드 ↑ ↓ · PageUp PageDown, [이전] [다음] 단추도 같은 모양으로 넘어간다.
+   · 확대해 있을 때(그때는 끌면 옮기기), 빈 판서 중, 슬라이더를 잡았을 때는 넘기지 않는다.
+   · 떠나는 장면은 그대로 떼어 그림자(.ghost)로 밀어내고, 새 장면은 그 너머에서 들어온다. */
+const peekPrev = document.getElementById('peek-prev'), peekNext = document.getElementById('peek-next');
+const SW = { drag: null, anim: null, back: 0, wheel: 0, wheelLock: false, wheelTimer: 0 };
+const REDUCE_MOTION = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+function peekLabel(el, i, dir) {
+  if (i < 0 || i >= SCENES.length) return;
+  el.firstChild.textContent = (dir > 0 ? '다음 장면 · ' : '이전 장면 · ') + (i + 1) + ' / ' + SCENES.length + '  ' + SCENES[i].title;
+}
+/** 미는 만큼(dy, 무대 px · 위로 밀면 음수) 장면과 이름표를 옮긴다 */
+function slideSet(dy) {
+  zoomEl.style.transform = dy ? 'translateY(' + dy + 'px)' : '';
+  peekNext.hidden = !(dy < 0 && idx < SCENES.length - 1);
+  peekPrev.hidden = !(dy > 0 && idx > 0);
+  if (!peekNext.hidden) peekNext.style.transform = 'translateY(' + (VIEW_H + dy) + 'px)';
+  if (!peekPrev.hidden) peekPrev.style.transform = 'translateY(' + (dy - VIEW_H) + 'px)';
+}
+function endAnims() {
+  clearTimeout(SW.back);
+  [zoomEl, peekNext, peekPrev].forEach(function (el) { el.style.transition = ''; });
+  const a = SW.anim;
+  if (a) { SW.anim = null; clearTimeout(a.timer); a.ghost.remove(); }
+  peekNext.hidden = peekPrev.hidden = true;
+  if (ZT.z === 1 && !ZT.x && !ZT.y) zoomEl.style.transform = '';
+}
+/** 조금만 밀다 놓았을 때 : 제자리로 */
+function springBack(dy) {
+  endAnims();
+  if (!dy || REDUCE_MOTION) return;
+  slideSet(dy);
+  void zoomEl.offsetWidth;
+  [zoomEl, peekNext, peekPrev].forEach(function (el) { el.style.transition = 'transform 200ms ease-out'; });
+  zoomEl.style.transform = 'translateY(0)';
+  peekNext.style.transform = 'translateY(' + VIEW_H + 'px)';
+  peekPrev.style.transform = 'translateY(' + (-VIEW_H) + 'px)';
+  SW.back = setTimeout(endAnims, 230);
+}
+/** 한 장면 넘기기 (dir : 1 다음, -1 이전). dy0 : 손가락으로 이미 민 만큼 */
+function turn(dir, dy0) {
+  const j = idx + dir;
+  if (j < 0 || j >= SCENES.length) { springBack(dy0 || 0); return; }
+  endAnims();
+  if (REDUCE_MOTION) { go(j); return; }
+  dy0 = dy0 || 0;
+  // 지금 장면을 떼어 그림자로 : 장면 속 요소를 그대로 옮기고, 필기는 그림으로 떠 둔다
+  const ghost = document.createElement('div'), old = document.createElement('div'), sc = document.getElementById('scene');
+  ghost.className = 'ghost'; ghost.style.height = VIEW_H + 'px';
+  old.className = 'scene-ghost'; old.style.marginTop = INK_OY + 'px';
+  while (sc.firstChild) old.appendChild(sc.firstChild);
+  ghost.appendChild(old);
+  try {
+    const snap = document.createElement('canvas');
+    snap.className = 'ink-snap'; snap.width = inkLayer.c.width; snap.height = inkLayer.c.height;
+    snap.style.width = INK_W + 'px'; snap.style.height = INK_H + 'px';
+    snap.getContext('2d').drawImage(inkLayer.c, 0, 0);
+    ghost.appendChild(snap);
+  } catch (e) { /* 필기 그림은 없어도 넘어간다 */ }
+  viewEl.appendChild(ghost);
+  go(j);
+  // 새 장면은 이름표가 있던 자리(그 너머)에서 들어온다
+  const from = dir > 0 ? VIEW_H + dy0 : dy0 - VIEW_H, to = dir > 0 ? -VIEW_H : VIEW_H;
+  zoomEl.style.transform = 'translateY(' + from + 'px)'; ghost.style.transform = 'translateY(' + dy0 + 'px)';
+  void zoomEl.offsetWidth;
+  const ms = Math.round(clamp(Math.abs(from) / VIEW_H, 0.4, 1) * 320), ease = 'transform ' + ms + 'ms cubic-bezier(.2,.7,.2,1)';
+  zoomEl.style.transition = ease; ghost.style.transition = ease;
+  zoomEl.style.transform = 'translateY(0)'; ghost.style.transform = 'translateY(' + to + 'px)';
+  SW.anim = { ghost: ghost, timer: setTimeout(endAnims, ms + 40) };
+}
+function cancelDrag() {
+  const d = SW.drag;
+  SW.drag = null;
+  if (d && d.on) springBack(d.dy);
+}
+// 손가락 몸짓 : 필기 · 확대 처리(위)보다 나중에 등록되어, 그쪽이 먼저 판단한 뒤에 본다
+stage.addEventListener('pointerdown', function (e) {
+  if (e.pointerType !== 'touch') return;
+  if (SW.drag) { if (e.pointerId !== SW.drag.id) cancelDrag(); return; }   // 두 번째 손가락 : 확대에 양보
+  if (VG.pinch || INK.active || INK.board || ZT.z > 1.001) return;
+  if (!inView(e.target) || (e.target.closest && e.target.closest('input[type="range"]'))) return;
+  if (wantsInk(e.pointerType, e.target)) return;
+  SW.drag = { id: e.pointerId, x0: e.clientX, y0: e.clientY, on: false, dy: 0, samples: [] };
+}, true);
+stage.addEventListener('pointermove', function (e) {
+  const d = SW.drag;
+  if (!d || e.pointerId !== d.id) return;
+  if (VG.pinch || INK.active) { cancelDrag(); return; }
+  const mx = e.clientX - d.x0, my = e.clientY - d.y0;
+  if (!d.on) {
+    // 위아래로 뚜렷이 움직여야 넘기기를 시작한다. 옆으로 먼저 움직이면 넘기기가 아니다
+    if (Math.abs(my) < 14 || Math.abs(my) < Math.abs(mx) * 1.3) { if (Math.abs(mx) > 24) SW.drag = null; return; }
+    d.on = true; endAnims();
+    peekLabel(peekNext, idx + 1, 1); peekLabel(peekPrev, idx - 1, -1);
+    try { stage.setPointerCapture(d.id); } catch (err) { /* 합성 이벤트 */ }
+  }
+  let dy = my / SCALE;
+  if ((dy > 0 && idx === 0) || (dy < 0 && idx === SCENES.length - 1)) dy *= 0.3;   // 처음 · 마지막 장면에서는 덜 따라온다
+  d.dy = dy;
+  d.samples.push([performance.now(), dy]); if (d.samples.length > 6) d.samples.shift();
+  slideSet(dy);
+  e.preventDefault();
+}, true);
+function swEnd(e) {
+  const d = SW.drag;
+  if (!d || e.pointerId !== d.id) return;
+  SW.drag = null;
+  if (!d.on) return;
+  VG.noClickUntil = performance.now() + 400;          // 민 뒤에 따라오는 click 은 버린다
+  if (e.type === 'pointercancel') { springBack(d.dy); return; }
+  const s = d.samples, v = s.length > 1 ? (s[s.length - 1][1] - s[0][1]) / Math.max(1, s[s.length - 1][0] - s[0][0]) : 0;
+  const far = Math.abs(d.dy) > VIEW_H * 0.18, flick = Math.abs(v) > 0.6 && Math.abs(d.dy) > 40 && v * d.dy > 0;
+  if (far || flick) turn(d.dy < 0 ? 1 : -1, d.dy); else springBack(d.dy);
+}
+window.addEventListener('pointerup', swEnd, true);
+window.addEventListener('pointercancel', swEnd, true);
+/** 휠 · 터치패드 : 한 번 쓸면 한 장면. 관성으로 이어지는 휠은 멈출 때까지 쉰다 */
+function wheelTurn(e) {
+  const unit = e.deltaMode === 1 ? 30 : e.deltaMode === 2 ? 800 : 1;
+  clearTimeout(SW.wheelTimer);
+  SW.wheelTimer = setTimeout(function () { SW.wheel = 0; SW.wheelLock = false; }, 180);
+  if (SW.wheelLock) return;
+  SW.wheel += e.deltaY * unit;
+  if (Math.abs(SW.wheel) >= 60) { const dir = SW.wheel > 0 ? 1 : -1; SW.wheel = 0; SW.wheelLock = true; turn(dir); }
+}

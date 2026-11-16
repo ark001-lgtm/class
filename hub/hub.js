@@ -309,25 +309,6 @@ if (window.matchMedia) {
   if (mq.addEventListener) mq.addEventListener('change', themeLabel);
 }
 
-/* ── 전체 화면 : 브라우저가 허락할 때만 된다 ── */
-const fullBtn = $('btn-full');
-function fsElement() { return document.fullscreenElement || document.webkitFullscreenElement || null; }
-function syncFull() {
-  const on = !!fsElement();
-  fullBtn.setAttribute('aria-pressed', String(on));
-  fullBtn.setAttribute('aria-label', on ? '전체 화면 끝내기' : '전체 화면');
-  fullBtn.title = on ? '전체 화면 끝내기' : '전체 화면 (전자칠판은 F11 이 더 편합니다)';
-}
-fullBtn.addEventListener('click', function () {
-  const d = document, el = d.documentElement;
-  if (fsElement()) { const ex = d.exitFullscreen || d.webkitExitFullscreen; if (ex) ex.call(d); return; }
-  const req = el.requestFullscreen || el.webkitRequestFullscreen;
-  const fail = function () { toast('이 브라우저에서는 전체 화면을 쓸 수 없습니다. 전자칠판 PC 는 키보드 F11 을 누르세요.'); };
-  if (!req) { fail(); return; }
-  try { const r = req.call(el); if (r && r.catch) r.catch(fail); } catch (e) { fail(); }
-});
-['fullscreenchange', 'webkitfullscreenchange'].forEach(function (t) { document.addEventListener(t, syncFull); });
-
 /* ── 찾기 · 학년도 · 주소 ── */
 qInput.addEventListener('input', function () { query = qInput.value; renderSubjects(); renderMain(); });
 qInput.addEventListener('keydown', function (e) { if (e.key === 'Escape') { qInput.value = ''; query = ''; renderSubjects(); renderMain(); } });
@@ -341,7 +322,7 @@ window.addEventListener('hashchange', function () { readHash(); pickDefault(); r
 // 화면 밝기는 허브와 수업 화면(엔진)이 함께 쓴다
 const savedTheme = load('suup-theme');
 if (savedTheme === 'dark' || savedTheme === 'light') document.documentElement.setAttribute('data-theme', savedTheme);
-themeLabel(); syncFull();
+themeLabel();
 readHash(); pickDefault(); writeHash(); render();
 checkUpdate();
 
