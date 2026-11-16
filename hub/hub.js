@@ -1,12 +1,12 @@
 'use strict';
 /* 나의 수업 : 허브(수업 첫 화면)
-   과목 → 단원 카드 → 소단원 줄([수업 화면] [시뮬레이션] [메모]). 모양은 「평택여고 과학 실험실」 첫 화면을 본떴다.
+   과목 → 단원 카드 → 소단원 줄([수업 화면] [시뮬레이션]). 모양은 「평택여고 과학 실험실」 첫 화면을 본떴다.
    목록은 tools/build.mjs 가 catalog.json 과 lessons/ 폴더를 읽어 이 파일 아래에 넣어 준다.
    로그인·저장 없음. 이 기기에서 마지막으로 본 과목과 화면 밝기만 브라우저에 기억한다. */
 const DATA = JSON.parse(document.getElementById('hub-data').textContent);
 const $ = function (id) { return document.getElementById(id); };
-const subjBar = $('subjects'), unitsBox = $('units'), qInput = $('q'), yearSel = $('year'), dlg = $('memo'), sheet = $('sheet');
-let year = DATA.current, subjId = null, query = '', offlineReady = false;
+const subjBar = $('subjects'), unitsBox = $('units'), qInput = $('q'), yearSel = $('year'), sheet = $('sheet');
+let year = DATA.current, subjId = null, query = '';
 
 /* 작은 도구 */
 function h(tag, attrs) {
@@ -51,14 +51,6 @@ function toast(msg, ms) {
   toastTimer = setTimeout(function () { t.hidden = true; }, ms || 6000);
 }
 $('toast').addEventListener('click', function () { this.hidden = true; });
-/** '2026-10-28' → '10월 28일' (올해가 아니면 연도도) */
-function fmtDate(d) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d || '');
-  if (!m) return d || '';
-  const md = Number(m[2]) + '월 ' + Number(m[3]) + '일';
-  return m[1] === String(new Date().getFullYear()) ? md : m[1] + '년 ' + md;
-}
-
 /* ── 목록 ── */
 function yearData() { return DATA.years[year] || DATA.years[DATA.current]; }
 function subjects() {
@@ -133,7 +125,6 @@ function renderMain() {
   $('status').textContent = view.status;
   unitsBox.replaceChildren();
   add(unitsBox, view.cards);
-  renderFoot();
 }
 /** 'Ⅱ. 열과 에너지' → { mark: 'Ⅱ', name: '열과 에너지' } */
 function unitParts(u) {
@@ -182,51 +173,20 @@ function unitCard(s, u, i, lessons, found) {
       h('div', null, h('h3', { text: p.name }), h('p', { class: 'cnt', text: found ? s.name + ' · ' + counts(lessons) : counts(lessons) }))),
     h('ol', { class: 'lessons' }, lessons.map(function (l) { return row(l, s); })));
 }
-/** 소단원 한 줄 : [수업 화면] [시뮬레이션] [학습지] [메모] */
+/** 소단원 한 줄 : [수업 화면] [시뮬레이션] [학습지] */
 function row(l, s) {
-  const ready = l.status !== 'prep', sims = l.sims || [], last = l.memo[0];
+  const ready = l.status !== 'prep', sims = l.sims || [];
   const acts = [];
   if (ready) acts.push(h('a', { class: 'act go', href: l.href }, icon('play'), '수업 화면'));
   sims.forEach(function (x) {
     acts.push(h('a', { class: 'act sim', href: x.href, title: x.label + ' 시뮬레이션' }, icon('sim'), sims.length > 1 ? x.label : '시뮬레이션'));
   });
   if (l.worksheet) acts.push(h('button', { class: 'act', type: 'button', title: '학습지 보기', onclick: function () { openSheet(l, s); } }, icon('doc'), '학습지'));
-  if (last) acts.push(h('button', { class: 'act memo' + (last.next.length ? ' todo' : ''), type: 'button', title: '수업 메모 · ' + fmtDate(last.date) + (last.label ? ' ' + last.label : ''), onclick: function () { openMemo(l, s); } }, icon('note'), '메모'));
   return h('li', { class: ready ? null : 'prep' },
     h('span', { class: 'ln', text: l.no }),
     ready ? h('a', { class: 'lt', href: l.href, text: l.title }) : h('span', { class: 'lt', text: l.title }),
     acts.length ? h('span', { class: 'acts' }, acts) : null);
 }
-function renderFoot() {
-  const f = $('foot');
-  f.replaceChildren(
-    h('p', null, h('b', { text: '전자칠판' }), ' : 키보드 F11 로 브라우저를 전체 화면으로 두면 수업 화면을 열고 닫아도 그대로입니다.'),
-    h('p', null, h('b', { text: '아이패드 · 휴대폰' }), ' : 사파리 [공유] → [홈 화면에 추가], 크롬 ⋮ → [홈 화면에 추가] 하면 앱처럼 열립니다.'),
-    h('p', null, h('b', { text: '시뮬레이션' }), ' : 「평택여고 과학 실험실」 키트에서 가져와 고쳐 썼습니다.'),
-    h('p', { id: 'offline' }, offlineText()),
-    h('p', { text: '목록을 만든 때 ' + DATA.built }));
-}
-function offlineText() { return offlineReady ? '이 기기에 수업 화면을 담아 두었습니다. 인터넷이 끊겨도 열립니다.' : ''; }
-
-/* ── 수업 메모 ── */
-function openMemo(l, s) {
-  $('memo-kicker').textContent = s.name + ' · ' + l.no;
-  $('memo-title').textContent = l.title + ' 수업 메모';
-  const body = $('memo-body');
-  body.replaceChildren.apply(body, l.memo.map(function (e) {
-    return h('section', { class: 'entry' },
-      h('h3', null, e.date, e.label ? h('span', { text: e.label }) : null),
-      e.changed.length ? [h('h4', { text: '바꾼 것' }), h('ul', null, e.changed.map(function (t) { return h('li', { text: t }); }))] : null,
-      e.next.length ? [h('h4', { class: 'todo', text: '다음에 바꿀 것' }), h('ul', null, e.next.map(function (t) { return h('li', { text: t }); }))] : null,
-      e.note.map(function (t) { return h('p', { text: t }); }));
-  }));
-  if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
-  body.scrollTop = 0;
-}
-function closeMemo() { if (dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
-$('memo-close').addEventListener('click', closeMemo);
-dlg.addEventListener('click', function (e) { if (e.target === dlg) closeMemo(); });
-
 /* ── 학습지 : 쪽마다 그려 보여 주기만 한다 (파일 내려받기 없음) ──
    PDF 를 그리는 데 pdf.js 를 쓴다 (처음 열 때 한 번 받아 오고, 그 뒤에는 기기에 담아 둔다). */
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
@@ -313,7 +273,7 @@ if (window.matchMedia) {
 qInput.addEventListener('input', function () { query = qInput.value; renderSubjects(); renderMain(); });
 qInput.addEventListener('keydown', function (e) { if (e.key === 'Escape') { qInput.value = ''; query = ''; renderSubjects(); renderMain(); } });
 document.addEventListener('keydown', function (e) {
-  if (e.key === '/' && document.activeElement !== qInput && !dlg.open && !sheet.open) { e.preventDefault(); qInput.focus(); }
+  if (e.key === '/' && document.activeElement !== qInput && !sheet.open) { e.preventDefault(); qInput.focus(); }
 });
 yearSel.addEventListener('change', function () { year = yearSel.value; pickDefault(); writeHash(); render(); });
 window.addEventListener('hashchange', function () { readHash(); pickDefault(); render(); });
@@ -328,8 +288,5 @@ checkUpdate();
 
 /* 한 번 열면 이 기기에 담아 두어 인터넷이 끊겨도 열리게 한다 (USB 로 연 파일에서는 하지 않음) */
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
-  navigator.serviceWorker.register('sw.js').then(function () { return navigator.serviceWorker.ready; }).then(function () {
-    offlineReady = true;
-    const p = $('offline'); if (p) p.textContent = offlineText();
-  }).catch(function () { /* 담아 두지 못해도 인터넷으로는 열린다 */ });
+  navigator.serviceWorker.register('sw.js').catch(function () { /* 담아 두지 못해도 인터넷으로는 열린다 */ });
 }

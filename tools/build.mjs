@@ -8,7 +8,6 @@
 //   scenes.css     그 소단원에만 쓰는 모양 (없어도 됨)
 //   lesson.html    엔진을 떼어 내기 전에 만든 수업 화면 (2-3). 그대로 쓴다
 //   worksheet.pdf  학습지 (있으면 [학습지] 단추가 켜짐)
-//   memo.md        수업 메모 (맨 위 메모에 '다음에 바꿀 것'이 남아 있으면 '고칠 것 있음')
 //
 // 시뮬레이션 sim/  (「평택여고 과학 실험실」 키트에서 가져온 것. 그대로 dist/sim/ 에 놓는다)
 //   catalog.json 의 소단원에 "sims": ["m/plane/sim.html#proj"] 처럼 짝을 적으면
@@ -37,25 +36,6 @@ function put(relPath, data) {
   outFiles.set(relPath.split(path.sep).join('/'), data);
 }
 function fail(msg) { console.error('\n멈춤 : ' + msg + '\n'); process.exit(1); }
-
-/** memo.md → [{ date, label, changed[], next[], note[] }] (최근 것이 먼저) */
-export function parseMemo(text) {
-  const entries = [];
-  let cur = null, sec = 'note';
-  for (const raw of text.replace(/<!--[\s\S]*?-->/g, '').split(/\r?\n/)) {
-    const line = raw.trim();
-    if (!line || /^#\s/.test(line)) continue;
-    let m = /^##\s+(\d{4}-\d{2}-\d{2})\s*[·:\-–—]?\s*(.*)$/.exec(line);
-    if (m) { cur = { date: m[1], label: m[2].trim(), changed: [], next: [], note: [] }; entries.push(cur); sec = 'note'; continue; }
-    if (!cur) continue;
-    m = /^(바꾼\s*것|다음에\s*바꿀\s*것)\s*:?\s*(.*)$/.exec(line);
-    if (m) { sec = m[1].startsWith('바꾼') ? 'changed' : 'next'; if (!m[2]) continue; }
-    const item = (m ? m[2] : line).replace(/^[-*•]\s*/, '').trim();
-    if (!item || /^\(?\s*없음\s*\)?$/.test(item)) continue;
-    cur[sec].push(item);
-  }
-  return entries.sort((a, b) => b.date.localeCompare(a.date));
-}
 
 /** 수업 화면에 '수업 목록으로' 단추를 붙인다. 웹앱에서 열 때만 보이고, USB 로 연 파일에서는 숨는다 */
 function withHubLink(html, hubHref) {
@@ -175,9 +155,7 @@ function buildYear(catalog, srcBase, urlBase, hashPrefix) {
                 const pdf = path.join(src, 'worksheet.pdf');
                 const hasPdf = fs.existsSync(pdf);
                 if (hasPdf) put(rel + 'worksheet.pdf', fs.readFileSync(pdf));
-                const memoFile = path.join(src, 'memo.md');
-                const memo = fs.existsSync(memoFile) ? parseMemo(fs.readFileSync(memoFile, 'utf8')) : [];
-                let status = hasScreen ? (memo.length && memo[0].next.length ? 'fix' : 'ready') : 'prep';
+                let status = hasScreen ? 'ready' : 'prep';
                 if (l.status) {
                   if (!STATUS_WORDS[l.status]) fail(`소단원 "${l.title}" 의 status "${l.status}" 는 준비 중 · 수업 가능 · 고칠 것 있음 가운데 하나로 써 주세요.`);
                   status = STATUS_WORDS[l.status];
@@ -189,7 +167,6 @@ function buildYear(catalog, srcBase, urlBase, hashPrefix) {
                   href: status === 'prep' ? null : rel,
                   worksheet: hasPdf ? rel + 'worksheet.pdf' : null,
                   sims: sims.map(function (x) { return { href: 'sim/' + x.spec, label: x.label }; }),
-                  memo: memo,
                 };
               }),
             };

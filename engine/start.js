@@ -8,15 +8,6 @@ if (window.matchMedia) {
   const on = function () { readTheme(); themeLabel(); if (inkReady) redrawInk(); };
   if (mq.addEventListener) mq.addEventListener('change', on);
 }
-// 수업 목록(허브)으로 : 나의 수업 웹앱에서 열었을 때만 보인다
-const hubLink = document.getElementById('btn-hub');
-if (SUUP.hub && /^https?:$/.test(location.protocol)) { hubLink.href = SUUP.hub; hubLink.hidden = false; }
-// 짝인 시뮬레이션 : 웹앱에서 열었을 때만 (USB 로 들고 간 파일에는 시뮬레이션이 없다). 둘이면 첫째로 가고, 둘째는 그 화면의 실험 단추로
-const simLink = document.getElementById('btn-sim');
-if (SUUP.sims && SUUP.sims.length && /^https?:$/.test(location.protocol)) {
-  simLink.href = SUUP.sims[0].href; simLink.title = SUUP.sims.map(function (s) { return s.label; }).join(' · ') + ' 시뮬레이션';
-  simLink.hidden = false;
-}
 // 아이패드는 펜슬로만 쓰므로 [손 필기]가 필요 없다
 if (IS_IPAD) toolHand.hidden = true;
 // 아이패드를 세로로 들면 수업 화면이 작아진다 : 가로로 돌리라고 알려 준다 (누르면 닫힘)
@@ -26,8 +17,6 @@ function syncRotate() { rotateHint.hidden = rotateClosed || !(IS_IPAD || navigat
 rotateHint.addEventListener('click', function () { rotateClosed = true; syncRotate(); });
 window.addEventListener('resize', syncRotate);
 syncRotate();
-document.getElementById('btn-prev').addEventListener('click', function () { turn(-1); });
-document.getElementById('btn-next').addEventListener('click', function () { turn(1); });
 document.addEventListener('keydown', function (ev) {
   const t = ev.target;
   const inRange = !!(t && t.tagName === 'INPUT');

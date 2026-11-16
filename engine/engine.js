@@ -3,10 +3,10 @@
    무대(폭 1920) · 넘기기(위아래로 밀기) · 빈칸 · 캔버스 그리기 도구 · 펜 필기 · 확대 · 테마.
    소단원은 장면만 만든다 (lessons/<과목>/<소단원>/scenes.js). 합치기가 이 파일 + 장면 + start.js 를 HTML 하나로 묶는다. */
 /* ═══════════════ 바탕 : 무대 크기, 색, 캔버스, 반복 ═══════════════
-   장면은 늘 1920×976 크기로 그린다. 무대 높이는 화면 비율을 따른다 : 머리줄 + 장면 + 아래 띠(TOOL_H, 왼쪽 아래 필기 도구 자리)가
-   최소 높이(1172)이고, 아이패드(가로 1180×820)처럼 덜 납작한 화면은 무대를 위아래로 늘려(최대 1400) 빈 띠 없이 꽉 채운다.
+   장면은 늘 1920×976 크기로 그린다. 위쪽 머리줄은 없다. 무대 높이는 화면 비율을 따른다 : 장면 + 아래 띠(TOOL_H : 왼쪽 아래 필기 도구,
+   가운데 쪽 번호, 오른쪽 소단원 · 장면 제목)가 최소 높이(1068, 전자칠판 16:9 는 1080)이고, 아이패드(가로 1180×820)처럼 덜 납작한 화면은 무대를 위아래로 늘려(최대 1400) 빈 띠 없이 꽉 채운다.
    장면은 가운데 두되 아래 띠만큼은 늘 비워 필기 도구가 장면을 가리지 않는다. 늘어난 위아래 여백에도 펜슬로 쓸 수 있다. */
-const W0 = 1920, BAR_H = 104, SCENE_H = 976, TOOL_H = 92;
+const W0 = 1920, BAR_H = 0, SCENE_H = 976, TOOL_H = 92;
 let H0 = 1080;
 let SCALE = 1;
 let RES_Z = 1;              // 캔버스를 이 확대 배율에 맞춰 선명하게 그린다 (확대가 멈추면 맞춘다)
@@ -246,17 +246,9 @@ function go(i) {
   main.replaceChildren();
   idx = i;
   const sc = SCENES[i];
-  const title = document.getElementById('scene-title');
-  title.textContent = sc.title;
-  document.getElementById('kicker').textContent = sc.part || sc.kicker;
-  const chip = document.getElementById('ws-chip');
-  chip.textContent = sc.ws || ''; chip.hidden = !sc.ws;
-  // 제목이 머리줄에 다 들어가지 않으면 글자를 조금씩 줄인다 (28px 까지, 그래도 길면 … 으로)
-  title.style.fontSize = '';
-  for (let s = 38; title.scrollWidth > title.clientWidth + 1 && s >= 28; s -= 2) title.style.fontSize = s + 'px';
+  // 아래 띠 : 가운데 쪽 번호, 오른쪽 소단원 · 장면 제목
   document.getElementById('count').textContent = (i + 1) + ' / ' + SCENES.length;
-  document.getElementById('btn-prev').disabled = i === 0;
-  document.getElementById('btn-next').disabled = i === SCENES.length - 1;
+  document.getElementById('foot-title').textContent = String(SUUP.id || '').split('/').pop() + ' ' + SUUP.title + ' · ' + sc.title;
   current = sc.make(main) || {};
   if (inkReady) syncInkKey();
   try { history.replaceState(null, '', '#' + sc.id); } catch (e) { /* 주소를 못 바꿔도 된다 */ }
@@ -287,7 +279,7 @@ function inkColor(c) { return COL['ink-' + (OLD_INK[c] || c)] || COL.pen; }
 function tapPx(kind) { return kind === 'pen' ? 6 : 12; }
 const INK = {
   pages: {}, hist: {}, key: null,
-  tool: 'pen', color: 'red', size: 1,
+  tool: 'pen', color: 'red', size: 0,
   hand: false, handAuto: false, board: false, sawPen: false,
   active: null, synth: false, suppressUntil: 0, supX: 0, supY: 0,
 };
@@ -524,7 +516,6 @@ function toInk(e) {
 }
 function inkTargetOK(el) {
   if (!el || !el.closest) return false;
-  if (el.closest('.bar')) return false;                               // 머리줄 단추는 늘 단추
   if (!el.closest('#view')) return false;
   if (!INK.board && el.closest('input[type="range"]')) return false;  // 슬라이더는 늘 슬라이더
   return true;
@@ -628,8 +619,7 @@ document.addEventListener('click', function (e) {
 }, true);
 
 /* ═══════════════ 확대 · 축소 ═══════════════
-   머리줄 아래 수업 화면(#view)만 키운다. 머리줄의 넘기기 · 필기 도구는 늘 그대로 보인다.
-   · 머리줄 [−] [100%] [+] : 단계별로 키우고 줄인다. 가운데 숫자를 누르면 원래 크기
+   수업 화면(#view)만 키운다. 왼쪽 아래 필기 도구와 아래 띠 글씨는 늘 그대로 보인다.
    · 두 손가락으로 벌리고 오므리기 (아이패드 · 전자칠판). 펜으로 쓰는 중이나 막 쓴 뒤의 손바닥은 무시
    · 확대한 뒤에는 빈 곳을 한 손가락(손 필기 끔)이나 마우스로 끌어 옮긴다. 두 손가락으로 옮겨도 된다
    · Ctrl + 휠(노트북 터치패드 오므리기)로 확대, 휠로 옮기기. 키보드 + − 0
@@ -641,13 +631,8 @@ const ZOOM_STEPS = [1, 1.25, 1.5, 2, 2.5, 3];
 const ZT = { z: 1, x: 0, y: 0 };                 // #zoom 의 이동(무대 px)과 배율
 const VG = { touches: new Map(), pinch: null, drag: null, lastPen: -1e9, noClickUntil: 0 };
 const zoomEl = document.getElementById('zoom'), viewEl = document.getElementById('view');
-const zoomInBtn = document.getElementById('zoom-in'), zoomOutBtn = document.getElementById('zoom-out'), zoomVal = document.getElementById('zoom-reset');
 function applyZoom() {
   zoomEl.style.transform = ZT.z === 1 && !ZT.x && !ZT.y ? '' : 'translate(' + ZT.x + 'px,' + ZT.y + 'px) scale(' + ZT.z + ')';
-  setText(zoomVal, Math.round(ZT.z * 100) + '%');
-  zoomVal.setAttribute('aria-pressed', String(ZT.z > 1.001));
-  zoomOutBtn.disabled = ZT.z <= ZMIN + 0.001;
-  zoomInBtn.disabled = ZT.z >= ZMAX - 0.001;
   stage.classList.toggle('zoomed', ZT.z > 1.001);
 }
 function clampPan() {
@@ -692,9 +677,6 @@ function resetZoomNow() {
 function viewPt(x, y) { const r = viewEl.getBoundingClientRect(); return { x: (x - r.left) / SCALE, y: (y - r.top) / SCALE }; }
 function inView(el) { return !!(el && el.closest && el.closest('#view')); }
 function isControl(el) { return !!(el && el.closest && el.closest('button, a[href], input, select, textarea, label, [role="button"], [role="tab"], .blank')); }
-zoomInBtn.addEventListener('click', function () { zoomStep(1); });
-zoomOutBtn.addEventListener('click', function () { zoomStep(-1); });
-zoomVal.addEventListener('click', function () { zoomTo(1); });
 
 // 손가락 · 마우스 몸짓. 필기 처리(위)보다 나중에 등록되어, 필기가 먼저 판단한 뒤에 본다
 stage.addEventListener('pointerdown', function (e) {
@@ -783,10 +765,10 @@ viewEl.addEventListener('wheel', function (e) {
 ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (t) { document.addEventListener(t, function (e) { e.preventDefault(); }, { passive: false }); });
 
 /* ═══════════════ 장면 넘기기 : 위아래로 밀기 (PDF 를 볼 때처럼) ═══════════════
-   · 손가락으로 화면을 위로 밀면 다음 장면, 아래로 밀면 이전 장면. 미는 동안 화면이 손가락을 따라오고,
+   · 손가락으로 화면을 위로 밀면 다음 장면, 아래로 밀면 이전 장면, 오른쪽으로 밀면 수업 목록으로. 미는 동안 화면이 손가락을 따라오고,
      다음(이전) 장면 이름표가 아래(위)에서 따라온다. 조금만 밀다 놓으면 제자리로 돌아간다.
      아이패드는 손가락이 늘 넘기기(펜슬은 필기), 전자칠판은 [손 필기]를 껐을 때 손가락이 넘기기다.
-   · 마우스 휠 · 노트북 터치패드 쓸기, 키보드 ↑ ↓ · PageUp PageDown, [이전] [다음] 단추도 같은 모양으로 넘어간다.
+   · 마우스 휠 · 노트북 터치패드 쓸기, 키보드 ↑ ↓ · PageUp PageDown 도 같은 모양으로 넘어간다.
    · 확대해 있을 때(그때는 끌면 옮기기), 빈 판서 중, 슬라이더를 잡았을 때는 넘기지 않는다.
    · 떠나는 장면은 그대로 떼어 그림자(.ghost)로 밀어내고, 새 장면은 그 너머에서 들어온다. */
 const peekPrev = document.getElementById('peek-prev'), peekNext = document.getElementById('peek-next');
@@ -858,7 +840,22 @@ function turn(dir, dy0) {
 function cancelDrag() {
   const d = SW.drag;
   SW.drag = null;
-  if (d && d.on) springBack(d.dy);
+  if (d && d.on) { if (d.axis === 'x') backSet(0); else springBack(d.dy); }
+}
+/** 오른쪽으로 미는 동안 : 화면이 조금 따라오고 '수업 목록으로' 안내가 나타난다 */
+const backHint = document.getElementById('back-hint');
+function backSet(dx) {
+  zoomEl.style.transform = dx ? 'translateX(' + Math.round(dx * 0.4) + 'px)' : '';
+  backHint.hidden = !dx;
+  backHint.style.opacity = String(clamp(dx / (VIEW_W * 0.22), 0, 1));
+}
+/** 수업 목록(허브)으로 : 허브에서 들어왔으면 뒤로 가기(보던 자리 그대로), 아니면 허브 주소로 */
+function goHub() {
+  try {
+    const hub = new URL(SUUP.hub, location.href);
+    if (document.referrer && new URL(document.referrer).pathname === hub.pathname && history.length > 1) { history.back(); return; }
+    location.href = hub.href;
+  } catch (e) { location.href = SUUP.hub; }
 }
 // 손가락 몸짓 : 필기 · 확대 처리(위)보다 나중에 등록되어, 그쪽이 먼저 판단한 뒤에 본다
 stage.addEventListener('pointerdown', function (e) {
@@ -875,12 +872,16 @@ stage.addEventListener('pointermove', function (e) {
   if (VG.pinch || INK.active) { cancelDrag(); return; }
   const mx = e.clientX - d.x0, my = e.clientY - d.y0;
   if (!d.on) {
-    // 위아래로 뚜렷이 움직여야 넘기기를 시작한다. 옆으로 먼저 움직이면 넘기기가 아니다
-    if (Math.abs(my) < 14 || Math.abs(my) < Math.abs(mx) * 1.3) { if (Math.abs(mx) > 24) SW.drag = null; return; }
+    // 위아래로 뚜렷이 움직이면 넘기기, 오른쪽으로 뚜렷이 움직이면 수업 목록으로 돌아가기
+    const ax = Math.abs(mx), ay = Math.abs(my);
+    if (ay >= 14 && ay >= ax * 1.3) d.axis = 'y';
+    else if (mx >= 14 && ax >= ay * 1.3 && SUUP.hub && /^https?:$/.test(location.protocol)) d.axis = 'x';
+    else { if (ax > 24 || ay > 24) SW.drag = null; return; }
     d.on = true; endAnims();
     peekLabel(peekNext, idx + 1, 1); peekLabel(peekPrev, idx - 1, -1);
     try { stage.setPointerCapture(d.id); } catch (err) { /* 합성 이벤트 */ }
   }
+  if (d.axis === 'x') { backSet(Math.max(0, mx / SCALE)); d.dx = Math.max(0, mx / SCALE); d.samples.push([performance.now(), d.dx]); if (d.samples.length > 6) d.samples.shift(); e.preventDefault(); return; }
   let dy = my / SCALE;
   if ((dy > 0 && idx === 0) || (dy < 0 && idx === SCENES.length - 1)) dy *= 0.3;   // 처음 · 마지막 장면에서는 덜 따라온다
   d.dy = dy;
@@ -894,6 +895,11 @@ function swEnd(e) {
   SW.drag = null;
   if (!d.on) return;
   VG.noClickUntil = performance.now() + 400;          // 민 뒤에 따라오는 click 은 버린다
+  if (d.axis === 'x') {
+    const s0 = d.samples, vx = s0.length > 1 ? (s0[s0.length - 1][1] - s0[0][1]) / Math.max(1, s0[s0.length - 1][0] - s0[0][0]) : 0;
+    if (e.type !== 'pointercancel' && (d.dx > VIEW_W * 0.22 || (vx > 0.7 && d.dx > 60))) { goHub(); return; }
+    backSet(0); return;
+  }
   if (e.type === 'pointercancel') { springBack(d.dy); return; }
   const s = d.samples, v = s.length > 1 ? (s[s.length - 1][1] - s[0][1]) / Math.max(1, s[s.length - 1][0] - s[0][0]) : 0;
   const far = Math.abs(d.dy) > VIEW_H * 0.18, flick = Math.abs(v) > 0.6 && Math.abs(d.dy) > 40 && v * d.dy > 0;
