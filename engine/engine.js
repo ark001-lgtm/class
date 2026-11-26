@@ -248,7 +248,7 @@ function go(i) {
   const sc = SCENES[i];
   // 아래 띠 : 가운데 쪽 번호, 오른쪽 소단원 · 장면 제목
   document.getElementById('count').textContent = (i + 1) + ' / ' + SCENES.length;
-  document.getElementById('foot-title').textContent = String(SUUP.id || '').split('/').pop() + ' ' + SUUP.title + ' · ' + sc.title;
+  document.getElementById('foot-title').textContent = String(SUUP.no || SUUP.id || '').split('/').pop() + ' ' + SUUP.title + ' · ' + sc.title;
   current = sc.make(main) || {};
   if (inkReady) syncInkKey();
   try { history.replaceState(null, '', '#' + sc.id); } catch (e) { /* 주소를 못 바꿔도 된다 */ }

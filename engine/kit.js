@@ -164,6 +164,28 @@ const KIT = (function () {
         K.btn('모두 가리기', function () { answers.forEach(function (a) { a.hidden = true; }); }))));
   };
 
+  /** 연습문제 한 쪽 : 왼쪽에 문제(그림은 시뮬레이션), 오른쪽은 펜슬로 풀 빈칸.
+      p = { level: '기본', stem: [글], cv, ctrl: [단추], extra: [표 등], ask: 글, bogi: ['ㄱ. …'], choices: ['① …'] } */
+  K.problem = function (root, p) {
+    const left = h('section', { class: 'panel col pad prob-q' },
+      h('p', { class: 'ws sm prob-stem' }, h('span', { class: 'prob-tag', text: p.level }), K.t(p.stem[0] || '')),
+      (p.stem || []).slice(1).map(function (s) { return K.p(s, 'ws sm prob-stem'); }),
+      p.cv ? h('div', { class: 'prob-fig' }, p.cv.c, p.ctrl && p.ctrl.length ? h('div', { class: 'prob-ctrl' }, p.ctrl) : null) : null,
+      p.under ? h('div', { style: 'width:860px;align-self:center' }, p.under) : null,
+      p.extra || null,
+      p.ask ? K.p(p.ask, 'ws sm prob-stem') : null,
+      p.bogi ? h('div', { class: 'prob-bogi' }, h('div', { class: 'bogi-title', text: '< 보 기 >' }), p.bogi.map(function (s) { return h('p', null, K.t(s)); })) : null,
+      p.choices ? h('div', { class: 'prob-choices' }, p.choices.map(function (s) { return h('span', null, K.t(s)); })) : null);
+    const right = h('section', { class: 'panel fill prob-work' }, h('span', { class: 'cap', text: '풀이' }));
+    root.append(h('div', { class: 'row', style: 'height:100%;gap:22px;align-items:stretch' }, left, right));
+  };
+  /** 단추 하나로 켜고 끄기 : { el, on() } */
+  K.toggle = function (label, onChange) {
+    let v = false;
+    const b = h('button', { class: 'btn small', type: 'button', 'aria-pressed': 'false', text: label, onclick: function () { v = !v; b.setAttribute('aria-pressed', String(v)); if (onChange) onChange(v); } });
+    return { el: b, on: function () { return v; } };
+  };
+
   /* ── 그리기 ── */
   /** 빛의 파장(nm) → 색. 380 nm 보다 짧으면 자외선, 750 nm 보다 길면 적외선이라 회색에 가깝게 */
   K.nm = function (nm, a) {

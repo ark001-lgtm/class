@@ -149,7 +149,7 @@ function buildYear(catalog, srcBase, urlBase, hashPrefix) {
                 const kno = String(l.no || l.id).split('-').pop().padStart(2, '0');
                 const sims = (l.sims || []).map(function (x) { return simInfo(x, `${s.name} ${l.id}`); });
                 const hasScreen = buildLesson(src, rel, '../'.repeat(depth) + '#' + hashPrefix + s.id,
-                  { id: s.id + '/' + l.id, title: l.title, kicker: kno + '. ' + l.title,
+                  { id: s.id + '/' + l.id, no: String(l.no || l.id), title: l.title, kicker: kno + '. ' + l.title,
                     sims: sims.map(function (x) { return { href: '../'.repeat(depth) + 'sim/' + x.spec, label: x.label }; }) });
                 if (hasScreen && sims.length && !urlBase) simLinks.push({ subject: { id: s.id, name: s.name }, id: l.no || l.id, title: l.title, href: '../' + rel, sims: sims.map(function (x) { return x.spec; }) });
                 const pdf = path.join(src, 'worksheet.pdf');

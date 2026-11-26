@@ -285,3 +285,17 @@ input[type=range].big::-moz-range-thumb { width: 40px; height: 40px; border-radi
 .card3 .c-title b { font-size: 30px; }
 .card3 .c-body { display: flex; flex-direction: column; gap: 10px; padding: 8px 22px 18px; }
 .t1 td .blank, .t1 td .frac { font-size: inherit; }
+
+/* 연습문제 : 왼쪽 문제(그림은 시뮬레이션) · 오른쪽 풀이 빈칸 */
+.prob-q { flex: none; width: 1180px; gap: 10px; min-height: 0; padding: 22px 30px; }
+.prob-stem { font-size: 26px; line-height: 1.5; margin: 0; }
+.prob-tag { display: inline-block; font-size: 22px; font-weight: 700; line-height: 1.4; padding: 0 14px; margin-right: 12px; border-radius: 999px; border: 2px solid var(--energy); color: var(--energy); vertical-align: 2px; }
+.prob-fig { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.prob-fig .prob-ctrl { display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
+.prob-bogi { border: 2px solid var(--line); border-radius: 12px; padding: 4px 22px 8px; }
+.prob-bogi .bogi-title { text-align: center; font-size: 20px; font-weight: 700; color: var(--muted); letter-spacing: .25em; }
+.prob-bogi p { font-size: 25px; line-height: 1.5; margin: 0; }
+.prob-choices { display: flex; flex-wrap: wrap; gap: 2px 44px; font-size: 26px; line-height: 1.5; }
+.prob-work { position: relative; }
+.prob-work .cap { position: absolute; left: 26px; top: 18px; }
+.prob-extra .t1 td, .prob-extra .t1 th { font-size: 24px; padding: 6px 10px; }
